@@ -1,5 +1,5 @@
 import api from './axios';
-import { Attempt, MarkingDTO, TestTemplate } from '../types/admin';
+import type { Attempt, MarkingDTO, TestTemplate } from '../types/admin';
 
 // Get all test attempts for admin review
 export const getAllAttempts = async (): Promise<Attempt[]> => {

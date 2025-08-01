@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Test, TestAnswer, Question } from '../../types/user';
 import { Button } from '../common/Button';
-import { Input } from '../common/Input';
 
 interface TestTakingFormProps {
   test: Test;
@@ -16,7 +15,6 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
 }) => {
   const [answers, setAnswers] = useState<{ [questionId: string]: string }>({});
   const [timeLeft, setTimeLeft] = useState(test.timeLimit * 60); // Convert minutes to seconds
-  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {

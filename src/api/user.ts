@@ -1,5 +1,5 @@
 import api from './axios';
-import { User, Test, TestSubmission, TestResult } from '../types/user';
+import type { User, Test, TestSubmission, TestResult } from '../types/user';
 
 // User authentication
 export const loginUser = async (credentials: { email: string; password: string }) => {
