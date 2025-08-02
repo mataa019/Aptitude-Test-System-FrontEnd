@@ -53,11 +53,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
         password: formData.password
       });
       
-      // Store token and user data
-      localStorage.setItem('authToken', response.token);
+      // Store token and user data (using access_token from your backend)
+      localStorage.setItem('authToken', response.access_token);
       localStorage.setItem('userId', response.user?.id);
       
-      onLoginSuccess(response.token, response.user);
+      onLoginSuccess(response.access_token, response.user);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

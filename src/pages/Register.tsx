@@ -8,8 +8,7 @@ const authAPI = {
   register: async (userData: { 
     email: string; 
     password: string; 
-    firstName: string; 
-    lastName: string; 
+    name: string; // Changed to match backend format
   }) => {
     const response = await axios.post('/auth/register', userData);
     return response.data;
@@ -64,15 +63,14 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
       const response = await authAPI.register({
         email: formData.email,
         password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName
+        name: `${formData.firstName} ${formData.lastName}` // Combine first and last name
       });
       
-      // Store token and user data
-      localStorage.setItem('authToken', response.token);
+      // Store token and user data (using access_token from your backend)
+      localStorage.setItem('authToken', response.access_token);
       localStorage.setItem('userId', response.user?.id);
       
-      onRegisterSuccess(response.token, response.user);
+      onRegisterSuccess(response.access_token, response.user);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

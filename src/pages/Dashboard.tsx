@@ -39,7 +39,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.firstName || 'Student'}!
+            Welcome back, {user?.name || 'Student'}!
           </h1>
           <p className="mt-2 text-gray-600">
             Manage your assigned tests and view your results below.
