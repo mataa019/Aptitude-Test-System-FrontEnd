@@ -10,10 +10,9 @@ const authAPI = {
     return response.data;
   },
   register: async (userData: { 
+    name: string;
     email: string; 
     password: string; 
-    firstName: string; 
-    lastName: string; 
   }) => {
     const response = await axios.post('/auth/register', userData);
     return response.data;
