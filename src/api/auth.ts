@@ -40,9 +40,14 @@ export const logout = () => {
 // Test backend connection
 export const testConnection = async () => {
   try {
-    const response = await api.get('/health');
-    return response.data;
-  } catch (error) {
+    // Test with a minimal login request to check if auth endpoint is working
+    await api.post('/auth/login', { email: 'test', password: 'test' });
+    return { status: 'connected', message: 'Backend is responding' };
+  } catch (error: any) {
+    // If we get a response (even error), it means the backend is working
+    if (error.response && error.response.status) {
+      return { status: 'connected', message: 'Backend is responding' };
+    }
     throw new Error(handleError(error));
   }
 };
