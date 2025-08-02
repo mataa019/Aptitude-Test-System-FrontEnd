@@ -1,41 +1,28 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader } from '../components/common/Loader';
 
 // Import pages
-import { Login } from '../pages/Login';
-import { Register } from '../pages/Register';
+import { Auth } from '../pages/Auth';
 
-// Import route wrappers
+// Import routes and wrapper components
 import { 
-  Dashboard, 
-  Test, 
-  Results, 
-  AdminDashboard, 
-  Attempts, 
-  Review 
-} from './RouteWrappers';
+  userRoutes, 
+  adminRoutes,
+  DashboardWrapper,
+  TestWrapper,
+  ResultsWrapper,
+  AdminDashboardWrapper,
+  AttemptsWrapper,
+  ReviewWrapper
+} from '../routes';
 
 export const AppRouter: React.FC = () => {
   const { isAuthenticated, user, login } = useAuth();
-  const [showRegister, setShowRegister] = React.useState(false);
 
   if (!isAuthenticated) {
-    if (showRegister) {
-      return (
-        <Register 
-          onRegisterSuccess={login}
-          onSwitchToLogin={() => setShowRegister(false)}
-        />
-      );
-    }
-    return (
-      <Login 
-        onLoginSuccess={login}
-        onSwitchToRegister={() => setShowRegister(true)}
-      />
-    );
+    return <Auth onAuthSuccess={login} />;
   }
 
   const isAdmin = user?.role === 'admin';
@@ -48,9 +35,9 @@ export const AppRouter: React.FC = () => {
           {!isAdmin && (
             <>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/test/:testId" element={<Test />} />
-              <Route path="/results" element={<Results />} />
+              <Route path="/dashboard" element={<DashboardWrapper />} />
+              <Route path="/test/:testId" element={<TestWrapper />} />
+              <Route path="/results" element={<ResultsWrapper />} />
             </>
           )}
 
@@ -59,9 +46,9 @@ export const AppRouter: React.FC = () => {
             <>
               <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/attempts" element={<Attempts />} />
-              <Route path="/admin/review/:attemptId" element={<Review />} />
+              <Route path="/admin/dashboard" element={<AdminDashboardWrapper />} />
+              <Route path="/admin/attempts" element={<AttemptsWrapper />} />
+              <Route path="/admin/review/:attemptId" element={<ReviewWrapper />} />
             </>
           )}
 

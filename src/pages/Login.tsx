@@ -1,7 +1,24 @@
 import React, { useState } from 'react';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import * as authAPI from '../api/auth';
+import axios from '../api/axios';
+
+// Authentication functions directly in this file
+const authAPI = {
+  login: async (credentials: { email: string; password: string }) => {
+    const response = await axios.post('/auth/login', credentials);
+    return response.data;
+  },
+  register: async (userData: { 
+    email: string; 
+    password: string; 
+    firstName: string; 
+    lastName: string; 
+  }) => {
+    const response = await axios.post('/auth/register', userData);
+    return response.data;
+  }
+};
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;

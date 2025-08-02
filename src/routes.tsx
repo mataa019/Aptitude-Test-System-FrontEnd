@@ -1,8 +1,8 @@
 import { lazy } from 'react';
-import { Navigate, type RouteObject } from 'react-router-dom';
+import { Navigate, type RouteObject, useParams, useNavigate } from 'react-router-dom';
 
 // Lazy load components for better performance
-const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Test = lazy(() => import('./pages/Test').then(m => ({ default: m.Test })));
 const Results = lazy(() => import('./pages/Results').then(m => ({ default: m.Results })));
@@ -12,14 +12,97 @@ const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then(m => ({
 const Attempts = lazy(() => import('./pages/admin/Attempts').then(m => ({ default: m.Attempts })));
 const Review = lazy(() => import('./pages/admin/Review').then(m => ({ default: m.Review })));
 
+// Route wrapper components that handle routing props
+const TestWrapper = () => {
+  const { testId } = useParams<{ testId: string }>();
+  const navigate = useNavigate();
+  
+  return (
+    <Test 
+      testId={testId || ''} 
+      onTestComplete={() => navigate('/results')} 
+      onBack={() => navigate('/dashboard')} 
+    />
+  );
+};
+
+const ReviewWrapper = () => {
+  const { attemptId } = useParams<{ attemptId: string }>();
+  const navigate = useNavigate();
+  
+  return (
+    <Review 
+      attemptId={attemptId || ''} 
+      currentPage="review"
+      onNavigate={(page) => navigate(`/admin/${page}`)}
+      onBack={() => navigate('/admin/attempts')} 
+    />
+  );
+};
+
+const DashboardWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Dashboard 
+      user={null} // This should come from auth context
+      onStartTest={(testId) => navigate(`/test/${testId}`)}
+      onViewResult={(resultId) => navigate(`/results#${resultId}`)}
+    />
+  );
+};
+
+const ResultsWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Results 
+      onBack={() => navigate('/dashboard')}
+      onViewDetails={(id) => console.log('View details:', id)}
+    />
+  );
+};
+
+const AdminDashboardWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <AdminDashboard 
+      user={null} // This should come from auth context
+      currentPage="dashboard"
+      onNavigate={(page) => navigate(`/admin/${page}`)}
+    />
+  );
+};
+
+const AttemptsWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Attempts 
+      currentPage="attempts"
+      onNavigate={(page) => navigate(`/admin/${page}`)}
+      onReviewAttempt={(attemptId) => navigate(`/admin/review/${attemptId}`)}
+    />
+  );
+};
+
+// Authentication routes - Auth component should be handled by AppRouter
+export const authRoutes: RouteObject[] = [
+  {
+    path: '/auth',
+    element: <div>Auth handled by AppRouter</div> // Placeholder, actual auth is in AppRouter
+  }
+];
+
 export const userRoutes: RouteObject[] = [
   {
     path: '/',
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: 'dashboard', element: <Dashboard /> },
-      { path: 'test/:testId', element: <Test /> },
-      { path: 'results', element: <Results /> },
+      { path: 'dashboard', element: <DashboardWrapper /> },
+      { path: 'test/:testId', element: <TestWrapper /> },
+      { path: 'results', element: <ResultsWrapper /> },
     ]
   }
 ];
@@ -29,11 +112,25 @@ export const adminRoutes: RouteObject[] = [
     path: '/admin',
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
-      { path: 'dashboard', element: <AdminDashboard /> },
-      { path: 'attempts', element: <Attempts /> },
-      { path: 'review/:attemptId', element: <Review /> },
+      { path: 'dashboard', element: <AdminDashboardWrapper /> },
+      { path: 'attempts', element: <AttemptsWrapper /> },
+      { path: 'review/:attemptId', element: <ReviewWrapper /> },
     ]
   }
 ];
 
-export { Login, Dashboard, Test, Results, AdminDashboard, Attempts, Review };
+export { 
+  Auth, 
+  Dashboard, 
+  Test, 
+  Results, 
+  AdminDashboard, 
+  Attempts, 
+  Review,
+  TestWrapper,
+  ReviewWrapper,
+  DashboardWrapper,
+  ResultsWrapper,
+  AdminDashboardWrapper,
+  AttemptsWrapper
+};
