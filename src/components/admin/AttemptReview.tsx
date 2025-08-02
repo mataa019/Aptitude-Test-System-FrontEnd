@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import type { Attempt, MarkingDTO } from '../../types/admin';
+import type { Attempt } from '../../types/admin';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
+import { markAttempt } from '../../api/admin';
 
 interface AttemptReviewProps {
   attempt: Attempt;
-  onMarkAttempt: (markingData: MarkingDTO) => void;
-  onApproveAttempt: () => void;
+  onMarkingComplete?: () => void;
   isLoading?: boolean;
 }
 
 export const AttemptReview: React.FC<AttemptReviewProps> = ({
   attempt,
-  onMarkAttempt,
-  onApproveAttempt,
-  isLoading = false
+  onMarkingComplete,
+  isLoading: propIsLoading = false
 }) => {
   const [feedback, setFeedback] = useState(attempt.feedback || '');
+  const [isLoading, setIsLoading] = useState(propIsLoading);
+  const [error, setError] = useState<string | null>(null);
   const [questionScores, setQuestionScores] = useState<{ [key: string]: number }>(() => {
     const scores: { [key: string]: number } = {};
     attempt.test.questions.forEach(question => {
@@ -33,21 +34,26 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
     return Object.values(questionScores).reduce((sum, score) => sum + score, 0);
   };
 
-  const handleMarkAttempt = () => {
-    const totalScore = calculateTotalScore();
-    const questionFeedback = attempt.test.questions.map(question => ({
-      questionId: question.id,
-      points: questionScores[question.id],
-      feedback: ''
-    }));
+  const handleMarkAttempt = async (approved: boolean = false) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
 
-    const markingData: MarkingDTO = {
-      score: totalScore,
-      feedback,
-      questionFeedback
-    };
-
-    onMarkAttempt(markingData);
+      const totalScore = calculateTotalScore();
+      
+      await markAttempt(attempt.id, totalScore, approved, token);
+      
+      if (onMarkingComplete) {
+        onMarkingComplete();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to mark attempt');
+      console.error('Error marking attempt:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getUserAnswer = (questionId: string) => {
@@ -191,25 +197,30 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
         </div>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex justify-end space-x-4">
-        {attempt.status === 'marked' && (
-          <Button
-            onClick={onApproveAttempt}
-            variant="primary"
-            isLoading={isLoading}
-            disabled={isLoading}
-          >
-            Approve Result
-          </Button>
-        )}
         <Button
-          onClick={handleMarkAttempt}
-          variant={attempt.status === 'submitted' ? 'primary' : 'secondary'}
+          onClick={() => handleMarkAttempt(false)}
+          variant="secondary"
           isLoading={isLoading}
           disabled={isLoading}
         >
-          {attempt.status === 'submitted' ? 'Mark Attempt' : 'Update Marking'}
+          Mark Only
+        </Button>
+        <Button
+          onClick={() => handleMarkAttempt(true)}
+          variant="primary"
+          isLoading={isLoading}
+          disabled={isLoading}
+        >
+          Mark & Approve
         </Button>
       </div>
     </div>

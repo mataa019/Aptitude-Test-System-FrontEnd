@@ -1,22 +1,71 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Attempt } from '../../types/admin';
 import { Button } from '../common/Button';
+import { getTestAttemptsWithAnswers } from '../../api/admin';
 
 interface AttemptsListProps {
-  attempts: Attempt[];
+  testTemplateId?: string;
+  attempts?: Attempt[];
   onReviewAttempt: (attemptId: string) => void;
   isLoading?: boolean;
 }
 
 export const AttemptsList: React.FC<AttemptsListProps> = ({
-  attempts,
+  testTemplateId,
+  attempts: propAttempts,
   onReviewAttempt,
-  isLoading = false
+  isLoading: propIsLoading = false
 }) => {
+  const [attempts, setAttempts] = useState<Attempt[]>(propAttempts || []);
+  const [isLoading, setIsLoading] = useState(propIsLoading);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (testTemplateId && !propAttempts) {
+      fetchAttempts();
+    }
+  }, [testTemplateId, propAttempts]);
+
+  const fetchAttempts = async () => {
+    if (!testTemplateId) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await getTestAttemptsWithAnswers(testTemplateId, token);
+      setAttempts(response.data.data || response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch attempts');
+      console.error('Error fetching attempts:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+        {testTemplateId && (
+          <button
+            onClick={fetchAttempts}
+            className="text-blue-600 hover:text-blue-500 font-medium"
+          >
+            Try Again
+          </button>
+        )}
       </div>
     );
   }
