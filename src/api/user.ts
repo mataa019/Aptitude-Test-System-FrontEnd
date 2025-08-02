@@ -1,43 +1,35 @@
-import api from './axios';
-import type { User, Test, TestSubmission, TestResult } from '../types/user';
+import axios from './axios'; // Your configured Axios instance
 
-// User authentication
-export const loginUser = async (credentials: { email: string; password: string }) => {
-  const response = await api.post('/auth/login', credentials);
-  return response.data;
-};
+// Get user profile
+export const getProfile = (userId: string) =>
+  axios.get(`/user/profile/${userId}`);
 
-export const registerUser = async (userData: Partial<User>) => {
-  const response = await api.post('/auth/register', userData);
-  return response.data;
-};
+// Get assigned tests for a user
+export const getAssignedTests = (userId: string) =>
+  axios.get(`/user/assigned-tests/${userId}`);
 
-// Get assigned tests for user
-export const getAssignedTests = async (): Promise<Test[]> => {
-  const response = await api.get('/user/assigned-tests');
-  return response.data;
-};
+// Get results for a user
+export const getResults = (userId: string) =>
+  axios.get(`/user/results/${userId}`);
 
-// Get test details for taking
-export const getTestDetails = async (testId: string): Promise<Test> => {
-  const response = await api.get(`/user/test/${testId}`);
-  return response.data;
-};
+// Submit all answers for an assignment
+export interface SubmitAnswerDto {
+  assignmentId: string;
+  responses: { questionId: string; answer: string | string[] }[];
+}
+export const submitAnswers = (data: SubmitAnswerDto, token: string) =>
+  axios.post('/user/submit-answers', data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Submit test answers
-export const submitTestAnswers = async (submission: TestSubmission) => {
-  const response = await api.post('/user/submit-test', submission);
-  return response.data;
-};
+// Start an assignment
+export const startAssignment = (assignmentId: string, token: string) =>
+  axios.post(`/user/assignment/${assignmentId}/start`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Get user's test results
-export const getUserResults = async (): Promise<TestResult[]> => {
-  const response = await api.get('/user/results');
-  return response.data;
-};
-
-// Get specific result details
-export const getResultDetails = async (resultId: string): Promise<TestResult> => {
-  const response = await api.get(`/user/result/${resultId}`);
-  return response.data;
-};
+// Complete an assignment
+export const completeAssignment = (assignmentId: string, token: string) =>
+  axios.post(`/user/assignment/${assignmentId}/complete`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });

@@ -1,44 +1,55 @@
-import api from './axios';
-import type { Attempt, MarkingDTO, TestTemplate } from '../types/admin';
+import axios from './axios'; 
 
-// Get all test attempts for admin review
-export const getAllAttempts = async (): Promise<Attempt[]> => {
-  const response = await api.get('/admin/attempts');
-  return response.data;
-};
+// Create a new question
+export const createQuestion = (data: any, token: string) =>
+  axios.post('/admin/question', data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Get attempts for a specific test template
-export const getTemplateAttempts = async (templateId: string): Promise<Attempt[]> => {
-  const response = await api.get(`/admin/template/${templateId}/attempts`);
-  return response.data;
-};
+// Update a question
+export const updateQuestion = (id: string, data: any, token: string) =>
+  axios.put(`/admin/question/${id}`, data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Get specific attempt details for review
-export const getAttemptDetails = async (attemptId: string): Promise<Attempt> => {
-  const response = await api.get(`/admin/attempt/${attemptId}`);
-  return response.data;
-};
+// Delete a question
+export const deleteQuestion = (id: string, token: string) =>
+  axios.delete(`/admin/question/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Mark/grade an attempt
-export const markAttempt = async (attemptId: string, markingData: MarkingDTO) => {
-  const response = await api.post(`/admin/attempt/${attemptId}/mark`, markingData);
-  return response.data;
-};
+// Assign a test to a user
+export const assignTest = (data: { userId: string; testTemplateId: string; assignedBy: string }, token: string) =>
+  axios.post('/admin/assign-test', data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Approve an attempt
-export const approveAttempt = async (attemptId: string) => {
-  const response = await api.post(`/admin/attempt/${attemptId}/approve`);
-  return response.data;
-};
+// Get test results for a template
+export const getTestResults = (testTemplateId: string, token: string) =>
+  axios.get(`/admin/results/${testTemplateId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Get all test templates
-export const getTestTemplates = async (): Promise<TestTemplate[]> => {
-  const response = await api.get('/admin/templates');
-  return response.data;
-};
+// Create a test template
+export const createTestTemplate = (data: any, token: string) =>
+  axios.post('/admin/test-templates', data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-// Create new test template
-export const createTestTemplate = async (template: Partial<TestTemplate>) => {
-  const response = await api.post('/admin/templates', template);
-  return response.data;
-};
+// Get a test template with all questions
+export const getTestTemplateWithQuestions = (testTemplateId: string, token: string) =>
+  axios.get(`/admin/test-templates/${testTemplateId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+// Get all attempts for a test template (with answers)
+export const getTestAttemptsWithAnswers = (testTemplateId: string, token: string) =>
+  axios.get(`/admin/attempts/${testTemplateId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+// Mark/approve a test attempt
+export const markAttempt = (attemptId: string, score: number, approved: boolean, token: string) =>
+  axios.put(`/admin/attempts/${attemptId}/mark`, { score, approved }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
