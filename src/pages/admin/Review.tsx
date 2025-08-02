@@ -3,7 +3,6 @@ import { AdminNav } from '../../components/admin/AdminNav';
 import { AttemptReview } from '../../components/admin/AttemptReview';
 import { Loader } from '../../components/common/Loader';
 import { useAdmin } from '../../hooks/useAdmin';
-import type { MarkingDTO } from '../../types/admin';
 
 interface ReviewProps {
   attemptId: string;
@@ -19,56 +18,20 @@ export const Review: React.FC<ReviewProps> = ({
   onBack 
 }) => {
   const { 
-    fetchAttemptDetails, 
-    markAttemptById, 
-    approveAttemptById, 
     loading, 
     error 
   } = useAdmin();
   
-  const [currentAttempt, setCurrentAttempt] = useState<any>(null);
-  const [isMarking, setIsMarking] = useState(false);
+  const [currentAttempt] = useState<any>(null);
+  const [isMarking] = useState(false);
 
+  // Note: For now, we'll need to implement attempt details fetching separately
+  // or modify the backend to provide this functionality
   useEffect(() => {
-    const loadAttempt = async () => {
-      try {
-        const attempt = await fetchAttemptDetails(attemptId);
-        setCurrentAttempt(attempt);
-      } catch (err) {
-        console.error('Failed to load attempt:', err);
-      }
-    };
-
-    loadAttempt();
-  }, [attemptId, fetchAttemptDetails]);
-
-  const handleMarkAttempt = async (markingData: MarkingDTO) => {
-    try {
-      setIsMarking(true);
-      await markAttemptById(attemptId, markingData);
-      // Reload attempt details to get updated data
-      const updatedAttempt = await fetchAttemptDetails(attemptId);
-      setCurrentAttempt(updatedAttempt);
-    } catch (err) {
-      console.error('Failed to mark attempt:', err);
-    } finally {
-      setIsMarking(false);
-    }
-  };
-
-  const handleApproveAttempt = async () => {
-    try {
-      setIsMarking(true);
-      await approveAttemptById(attemptId);
-      // Reload attempt details to get updated data
-      const updatedAttempt = await fetchAttemptDetails(attemptId);
-      setCurrentAttempt(updatedAttempt);
-    } catch (err) {
-      console.error('Failed to approve attempt:', err);
-    } finally {
-      setIsMarking(false);
-    }
-  };
+    // TODO: Implement individual attempt details fetching
+    // For now, you would need to pass the attempt data from the parent component
+    console.log('Attempt ID:', attemptId);
+  }, [attemptId]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -99,8 +62,10 @@ export const Review: React.FC<ReviewProps> = ({
           ) : currentAttempt ? (
             <AttemptReview
               attempt={currentAttempt}
-              onMarkAttempt={handleMarkAttempt}
-              onApproveAttempt={handleApproveAttempt}
+              onMarkingComplete={() => {
+                // Handle marking completion
+                console.log('Marking completed');
+              }}
               isLoading={isMarking}
             />
           ) : (

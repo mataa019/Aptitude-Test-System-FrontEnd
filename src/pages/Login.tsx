@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { loginUser, registerUser } from '../api/user';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
