@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AssignedTestsList } from '../../components/user/AssignedTestsList';
 import { ResultsList } from '../../components/user/ResultsList';
-import { getAvailableTests, getUserAttempts } from '../../api/user';
+import { getAvailableTests, getUserResults } from '../../api/user';
 
 interface DashboardProps {
   user: any;
@@ -29,20 +29,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         // Try to fetch data, but don't fail if endpoints don't exist
         try {
-          const [testsResponse, attemptsResponse] = await Promise.all([
+          const [testsResponse, resultsResponse] = await Promise.all([
             getAvailableTests(),
-            getUserAttempts()
+            getUserResults()
           ]);
           
           console.log('📝 Tests response:', testsResponse);
-          console.log('📊 Attempts response:', attemptsResponse);
+          console.log('📊 Results response:', resultsResponse);
           
           // Handle the API response structure based on your backend
           const assignedTestsData = testsResponse.data || testsResponse || [];
-          const attemptsData = attemptsResponse.data || attemptsResponse || [];
+          const resultsData = resultsResponse.data || resultsResponse || [];
           
           setAssignedTests(assignedTestsData);
-          setResults(attemptsData);
+          setResults(resultsData);
         } catch (apiError: any) {
           console.warn('⚠️ API endpoints error:', apiError.message);
           // Don't completely fail - show empty dashboard with error info

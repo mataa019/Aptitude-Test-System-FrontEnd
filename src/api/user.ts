@@ -87,3 +87,19 @@ export const getUserAttempts = async () => {
     return { data: [] };
   }
 };
+
+// Get user's test results
+export const getUserResults = async (userId?: string) => {
+  try {
+    // Use provided userId or get from localStorage
+    const targetUserId = userId || localStorage.getItem('userId');
+    if (!targetUserId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await api.get(`/user/results/${targetUserId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};

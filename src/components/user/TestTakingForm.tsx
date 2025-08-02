@@ -14,7 +14,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
   isSubmitting = false
 }) => {
   const [answers, setAnswers] = useState<{ [questionId: string]: string }>({});
-  const [timeLeft, setTimeLeft] = useState(test.timeLimit * 60); // Convert minutes to seconds
+  const [timeLeft, setTimeLeft] = useState((test.timeLimit || test.testTemplate?.timeLimit || 60) * 60); // Convert minutes to seconds
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -40,7 +40,8 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
       answer
     }));
     
-    const timeSpent = (test.timeLimit * 60 - timeLeft) / 60; // Convert back to minutes
+    const testTimeLimit = test.timeLimit || test.testTemplate?.timeLimit || 60;
+    const timeSpent = (testTimeLimit * 60 - timeLeft) / 60; // Convert back to minutes
     onSubmit(testAnswers, timeSpent);
   };
 
@@ -56,13 +57,19 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
 
     switch (question.type) {
       case 'multiple-choice':
+        const options = question.options 
+          ? (typeof question.options === 'string' 
+              ? JSON.parse(question.options) 
+              : question.options)
+          : [];
+        
         return (
           <div key={question.id} className="space-y-3">
             <h3 className="text-lg font-medium text-gray-900">
-              {index + 1}. {question.text} ({question.points} points)
+              {index + 1}. {question.text} ({question.marks} points)
             </h3>
             <div className="space-y-2">
-              {question.options?.map((option, optionIndex) => (
+              {Array.isArray(options) && options.map((option: string, optionIndex: number) => (
                 <label key={optionIndex} className="flex items-center space-x-3 cursor-pointer">
                   <input
                     type="radio"
@@ -83,7 +90,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
         return (
           <div key={question.id} className="space-y-3">
             <h3 className="text-lg font-medium text-gray-900">
-              {index + 1}. {question.text} ({question.points} points)
+              {index + 1}. {question.text} ({question.marks} points)
             </h3>
             <div className="space-y-2">
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -112,11 +119,11 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
           </div>
         );
 
-      case 'text':
+      case 'sentence':
         return (
           <div key={question.id} className="space-y-3">
             <h3 className="text-lg font-medium text-gray-900">
-              {index + 1}. {question.text} ({question.points} points)
+              {index + 1}. {question.text} ({question.marks} points)
             </h3>
             <textarea
               value={answer}
@@ -134,15 +141,16 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
   };
 
   const answeredQuestions = Object.keys(answers).length;
-  const totalQuestions = test.questions.length;
+  const questions = test.questions || test.testTemplate?.questions || [];
+  const totalQuestions = questions.length;
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 pb-4 border-b">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{test.title}</h1>
-          <p className="text-gray-600 mt-2">{test.description}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{test.title || test.testTemplate?.name}</h1>
+          <p className="text-gray-600 mt-2">{test.description || `${test.testTemplate?.category} - ${test.testTemplate?.department}`}</p>
         </div>
         <div className="text-right">
           <div className={`text-2xl font-mono ${timeLeft < 300 ? 'text-red-600' : 'text-blue-600'}`}>
@@ -168,7 +176,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
 
       {/* Questions */}
       <div className="space-y-8 mb-8">
-        {test.questions.map((question, index) => renderQuestion(question, index))}
+        {questions.map((question, index) => renderQuestion(question, index))}
       </div>
 
       {/* Submit Button */}
