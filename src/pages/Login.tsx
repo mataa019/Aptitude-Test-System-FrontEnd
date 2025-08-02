@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { authAPI, apiUtils } from '../api';
+import { login, testConnection } from '../api/auth';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
@@ -17,15 +17,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
   const [error, setError] = useState<string | null>(null);
 
   // Test connection function
-  const testConnection = async () => {
+  const testConnectionHandler = async () => {
     try {
       console.log('Testing backend connection...');
-      await authAPI.testConnection();
+      await testConnection();
       alert('Backend connection successful!');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Connection test failed:', err);
-      const errorMessage = apiUtils.handleApiError(err);
-      alert(`Backend connection failed: ${errorMessage}\nPlease check if the backend server is running on http://localhost:3000`);
+      alert(`Backend connection failed: ${err.message}\nPlease check if the backend server is running on http://localhost:3000`);
     }
   };
 
@@ -46,19 +45,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
     try {
       console.log('Attempting login with:', { email: formData.email });
       
-      const response = await authAPI.login({
-        email: formData.email,
-        password: formData.password
-      });
+      const response = await login(formData.email, formData.password);
       
       console.log('Login response:', response);
       
-      // Token and user ID are already stored by authAPI.login
       onLoginSuccess(response.token, response.user);
     } catch (err: any) {
       console.error('Login error:', err);
-      const errorMessage = apiUtils.handleApiError(err);
-      setError(errorMessage);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -128,7 +122,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
           {/* Test Connection Button - for debugging */}
           <button
             type="button"
-            onClick={testConnection}
+            onClick={testConnectionHandler}
             className="w-full px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
           >
             Test Backend Connection

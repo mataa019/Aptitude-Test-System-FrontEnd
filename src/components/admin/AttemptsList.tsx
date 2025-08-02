@@ -32,13 +32,11 @@ export const AttemptsList: React.FC<AttemptsListProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found');
       
-      const response = await getTestAttemptsWithAnswers(testTemplateId, token);
-      setAttempts(response.data.data || response.data);
+      const response = await getTestAttemptsWithAnswers(testTemplateId);
+      setAttempts(response.data || response);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch attempts');
+      setError(err.message || 'Failed to fetch attempts');
       console.error('Error fetching attempts:', err);
     } finally {
       setIsLoading(false);

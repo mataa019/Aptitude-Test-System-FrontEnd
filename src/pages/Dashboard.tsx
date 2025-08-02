@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AssignedTestsList } from '../components/user/AssignedTestsList';
 import { ResultsList } from '../components/user/ResultsList';
-import { useUser } from '../hooks/useUser';
+import { getAvailableTests, getUserAttempts } from '../api/user';
 
 interface DashboardProps {
   user: any;
@@ -14,12 +14,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onStartTest, 
   onViewResult 
 }) => {
-  const {
-    assignedTests,
-    results,
-    loading,
-    error
-  } = useUser();
+  const [assignedTests, setAssignedTests] = useState<any[]>([]);
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch available tests and user attempts
+        const [testsResponse, attemptsResponse] = await Promise.all([
+          getAvailableTests(),
+          getUserAttempts()
+        ]);
+        
+        setAssignedTests(testsResponse.data || testsResponse || []);
+        setResults(attemptsResponse.data || attemptsResponse || []);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load dashboard data');
+        console.error('Dashboard data fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   if (error) {
     return (

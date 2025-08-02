@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TestTakingForm } from '../components/user/TestTakingForm';
 import { Loader } from '../components/common/Loader';
-import { useUser } from '../hooks/useUser';
+import { getTestById, startTest, submitAnswer, finishTest } from '../api/user';
 import type { TestAnswer } from '../types/user';
 
 interface TestProps {
@@ -11,14 +11,8 @@ interface TestProps {
 }
 
 export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) => {
-  const { 
-    fetchTestDetails, 
-    submitTest, 
-    startTestAssignment, 
-    completeTestAssignment, 
-    loading, 
-    error 
-  } = useUser();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentTest, setCurrentTest] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
@@ -26,22 +20,33 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
   useEffect(() => {
     const loadTest = async () => {
       try {
-        const test = await fetchTestDetails(testId);
-        setCurrentTest(test);
-      } catch (err) {
+        setLoading(true);
+        setError(null);
+        
+        const response = await getTestById(testId);
+        setCurrentTest(response.data || response);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load test');
         console.error('Failed to load test:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadTest();
-  }, [testId, fetchTestDetails]);
+    if (testId) {
+      loadTest();
+    }
+  }, [testId]);
 
   const handleStartTest = async () => {
     try {
       setIsSubmitting(true);
-      await startTestAssignment(testId);
+      setError(null);
+      
+      await startTest(testId);
       setIsStarted(true);
-    } catch (err) {
+    } catch (err: any) {
+      setError(err.message || 'Failed to start test');
       console.error('Failed to start test:', err);
     } finally {
       setIsSubmitting(false);
@@ -51,17 +56,18 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
   const handleSubmitTest = async (answers: TestAnswer[], timeSpent: number) => {
     try {
       setIsSubmitting(true);
-      // Submit answers first
-      await submitTest({
-        testId,
-        answers,
-        timeSpent,
-        submittedAt: new Date()
-      });
-      // Then complete the assignment
-      await completeTestAssignment(testId);
+      setError(null);
+      
+      // Submit all answers
+      for (const answer of answers) {
+        await submitAnswer(testId, answer.questionId, answer.answer);
+      }
+      
+      // Finish the test
+      await finishTest(testId);
       onTestComplete();
-    } catch (err) {
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit test');
       console.error('Failed to submit test:', err);
     } finally {
       setIsSubmitting(false);

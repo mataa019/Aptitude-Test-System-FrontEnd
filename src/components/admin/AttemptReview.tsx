@@ -38,18 +38,16 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found');
 
       const totalScore = calculateTotalScore();
       
-      await markAttempt(attempt.id, totalScore, approved, token);
+      await markAttempt(attempt.id, totalScore, approved);
       
       if (onMarkingComplete) {
         onMarkingComplete();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to mark attempt');
+      setError(err.message || 'Failed to mark attempt');
       console.error('Error marking attempt:', err);
     } finally {
       setIsLoading(false);

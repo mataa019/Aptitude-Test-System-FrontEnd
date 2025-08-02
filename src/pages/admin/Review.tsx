@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AdminNav } from '../../components/admin/AdminNav';
 import { AttemptReview } from '../../components/admin/AttemptReview';
 import { Loader } from '../../components/common/Loader';
-import { useAdmin } from '../../hooks/useAdmin';
+import { getTestAttemptsWithAnswers } from '../../api/admin';
 
 interface ReviewProps {
   attemptId: string;
@@ -17,20 +17,77 @@ export const Review: React.FC<ReviewProps> = ({
   onNavigate, 
   onBack 
 }) => {
-  const { 
-    loading, 
-    error 
-  } = useAdmin();
-  
-  const [currentAttempt] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentAttempt, setCurrentAttempt] = useState<any>(null);
   const [isMarking] = useState(false);
 
-  // Note: For now, we'll need to implement attempt details fetching separately
-  // or modify the backend to provide this functionality
   useEffect(() => {
-    // TODO: Implement individual attempt details fetching
-    // For now, you would need to pass the attempt data from the parent component
-    console.log('Attempt ID:', attemptId);
+    const fetchAttemptDetails = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // For now, we'll need to implement a way to get individual attempt details
+        // This could be done by fetching all attempts and finding the specific one
+        // or by creating a new API endpoint for individual attempts
+        
+        // Mock attempt data for now - replace with actual API call
+        const mockAttempt = {
+          id: attemptId,
+          status: 'submitted',
+          submittedAt: new Date().toISOString(),
+          timeSpent: 45,
+          totalPoints: 100,
+          user: {
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com'
+          },
+          test: {
+            title: 'JavaScript Fundamentals',
+            questions: [
+              {
+                id: '1',
+                text: 'What is a closure in JavaScript?',
+                type: 'text',
+                points: 25,
+                correctAnswer: 'A closure is a function that has access to variables in its outer scope'
+              },
+              {
+                id: '2',
+                text: 'Explain the difference between let and var',
+                type: 'text',
+                points: 25,
+                correctAnswer: 'let has block scope while var has function scope'
+              }
+            ]
+          },
+          answers: [
+            {
+              questionId: '1',
+              answer: 'A closure is when a function remembers its lexical scope'
+            },
+            {
+              questionId: '2',
+              answer: 'let is block scoped, var is function scoped'
+            }
+          ],
+          feedback: ''
+        };
+        
+        setCurrentAttempt(mockAttempt);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load attempt details');
+        console.error('Error fetching attempt details:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (attemptId) {
+      fetchAttemptDetails();
+    }
   }, [attemptId]);
 
   return (

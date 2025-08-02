@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdminNav } from '../../components/admin/AdminNav';
-import { useAdmin } from '../../hooks/useAdmin';
+import { getTestResults } from '../../api/admin';
 
 interface AdminDashboardProps {
   user: any;
@@ -13,7 +13,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentPage, 
   onNavigate 
 }) => {
-  const { dashboardStats, loading, error } = useAdmin();
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // For now, we'll use mock data since there's no specific dashboard endpoint
+        // You can replace this with actual API calls when available
+        const mockStats = {
+          totalTemplates: 5,
+          totalAttempts: 25,
+          pendingReviews: 8,
+          activeUsers: 12,
+          recentActivity: [
+            {
+              id: 1,
+              description: "New test attempt submitted for JavaScript Basics",
+              timestamp: new Date().toISOString()
+            },
+            {
+              id: 2,
+              description: "Test template 'React Fundamentals' created",
+              timestamp: new Date(Date.now() - 3600000).toISOString()
+            },
+            {
+              id: 3,
+              description: "Student attempt approved for Python Basics",
+              timestamp: new Date(Date.now() - 7200000).toISOString()
+            }
+          ]
+        };
+        
+        setDashboardStats(mockStats);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load dashboard data');
+        console.error('Dashboard data fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -161,7 +207,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
                   <div className="flow-root">
                     <ul className="-mb-8">
-                      {dashboardStats.recentActivity.map((activity, index) => (
+                      {dashboardStats.recentActivity.map((activity: any, index: number) => (
                         <li key={activity.id}>
                           <div className="relative pb-8">
                             {index !== dashboardStats.recentActivity.length - 1 && (

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResultsList } from '../components/user/ResultsList';
-import { useUser } from '../hooks/useUser';
+import { getUserAttempts } from '../api/user';
 
 interface ResultsProps {
   onBack: () => void;
@@ -8,7 +8,28 @@ interface ResultsProps {
 }
 
 export const Results: React.FC<ResultsProps> = ({ onBack, onViewDetails }) => {
-  const { results, loading, error } = useUser();
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await getUserAttempts();
+        setResults(response.data || response || []);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load test results');
+        console.error('Error fetching results:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, []);
 
   if (error) {
     return (
