@@ -25,17 +25,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
         setLoading(true);
         setError(null);
         
-        // Fetch available tests and user attempts
-        const [testsResponse, attemptsResponse] = await Promise.all([
-          getAvailableTests(),
-          getUserAttempts()
-        ]);
+        console.log('🔍 Dashboard: Fetching data for user:', user);
         
-        setAssignedTests(testsResponse.data || testsResponse || []);
-        setResults(attemptsResponse.data || attemptsResponse || []);
+        // Try to fetch data, but don't fail if endpoints don't exist
+        try {
+          const [testsResponse, attemptsResponse] = await Promise.all([
+            getAvailableTests(),
+            getUserAttempts()
+          ]);
+          
+          console.log('📝 Tests response:', testsResponse);
+          console.log('📊 Attempts response:', attemptsResponse);
+          
+          setAssignedTests(testsResponse.data || testsResponse || []);
+          setResults(attemptsResponse.data || attemptsResponse || []);
+        } catch (apiError: any) {
+          console.warn('⚠️ API endpoints not available yet:', apiError.message);
+          // Set mock data for development
+          setAssignedTests([]);
+          setResults([]);
+          // Don't set error state - just show empty dashboard
+        }
       } catch (err: any) {
+        console.error('❌ Dashboard data fetch error:', err);
         setError(err.message || 'Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -43,6 +56,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     fetchData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -62,10 +86,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.name || 'Student'}!
+            Welcome back{user?.name ? `, ${user.name}` : ''}!
           </h1>
           <p className="mt-2 text-gray-600">
-            Manage your assigned tests and view your results below.
+            {user?.email ? `Logged in as: ${user.email}` : 'Manage your assigned tests and view your results below.'}
           </p>
         </div>
 
@@ -135,6 +159,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Show development notice if no data */}
+          {assignedTests.length === 0 && results.length === 0 && !loading && (
+            <div className="col-span-1 lg:col-span-2 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm">
+                    <strong>Development Mode:</strong> The backend API endpoints for tests and user attempts are not configured yet. 
+                    Once your NestJS backend has the required endpoints (<code>/api/user/tests</code> and <code>/api/user/attempts</code>), 
+                    this dashboard will display your assigned tests and results.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Assigned Tests */}
           <div className="bg-white shadow rounded-lg p-6">
             <AssignedTestsList

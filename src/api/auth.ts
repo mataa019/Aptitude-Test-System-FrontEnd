@@ -6,12 +6,13 @@ export const login = async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
     const { message, access_token, user: userData } = response.data;
     
-    // Store token and user ID
+    // Store token and user data
     token.set(access_token);
     user.setId(userData.id);
+    user.set(userData);
     
     return { token: access_token, user: userData, message };
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(handleError(error));
   }
 };

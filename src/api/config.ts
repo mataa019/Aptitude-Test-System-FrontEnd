@@ -1,15 +1,16 @@
 import axios from 'axios';
 
-// Basic configuration
-const API_BASE_URL = 'http://localhost:3000/api';
+// Basic configuration - Using Vite proxy to avoid CORS issues
+const API_BASE_URL = '/api';
 
-// Create axios instance
+// Create axios instance with CORS handling
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: false,
 });
 
 // Token management
@@ -23,7 +24,15 @@ export const token = {
 export const user = {
   getId: () => localStorage.getItem('userId'),
   setId: (id: string) => localStorage.setItem('userId', id),
-  remove: () => localStorage.removeItem('userId'),
+  get: () => {
+    const userData = localStorage.getItem('userData');
+    return userData ? JSON.parse(userData) : null;
+  },
+  set: (userData: any) => localStorage.setItem('userData', JSON.stringify(userData)),
+  remove: () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userData');
+  },
 };
 
 // Add token to all requests

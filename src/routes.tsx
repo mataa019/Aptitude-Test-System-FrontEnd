@@ -1,18 +1,19 @@
 import { lazy } from 'react';
 import { Navigate, type RouteObject, useParams, useNavigate } from 'react-router-dom';
+import { user } from './api/config';
 
 // Lazy load components for better performance
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
 
 // User pages
-const Dashboard = lazy(() => import('./pages/users').then(m => ({ default: m.Dashboard })));
-const Test = lazy(() => import('./pages/users').then(m => ({ default: m.Test })));
-const Results = lazy(() => import('./pages/users').then(m => ({ default: m.Results })));
+const Dashboard = lazy(() => import('./pages/users/Dashboard').then(m => ({ default: m.Dashboard })));
+const Test = lazy(() => import('./pages/users/Test').then(m => ({ default: m.Test })));
+const Results = lazy(() => import('./pages/users/Results').then(m => ({ default: m.Results })));
 
 // Admin pages
-const AdminDashboard = lazy(() => import('./pages/admin').then(m => ({ default: m.AdminDashboard })));
-const Attempts = lazy(() => import('./pages/admin').then(m => ({ default: m.Attempts })));
-const Review = lazy(() => import('./pages/admin').then(m => ({ default: m.Review })));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard })));
+const Attempts = lazy(() => import('./pages/admin/Attempts').then(m => ({ default: m.Attempts })));
+const Review = lazy(() => import('./pages/admin/Review').then(m => ({ default: m.Review })));
 
 // Route wrapper components that handle routing props
 const TestWrapper = () => {
@@ -45,9 +46,19 @@ const ReviewWrapper = () => {
 const DashboardWrapper = () => {
   const navigate = useNavigate();
   
+  // Safely get user data
+  const getUserData = () => {
+    try {
+      return user.get();
+    } catch (error) {
+      console.warn('Error getting user data:', error);
+      return null;
+    }
+  };
+  
   return (
     <Dashboard 
-      user={null} // This should come from auth context
+      user={getUserData()}
       onStartTest={(testId) => navigate(`/test/${testId}`)}
       onViewResult={(resultId) => navigate(`/results#${resultId}`)}
     />
@@ -70,7 +81,7 @@ const AdminDashboardWrapper = () => {
   
   return (
     <AdminDashboard 
-      user={null} // This should come from auth context
+      user={user.get()}
       currentPage="dashboard"
       onNavigate={(page) => navigate(`/admin/${page}`)}
     />
