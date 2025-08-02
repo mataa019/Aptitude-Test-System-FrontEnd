@@ -13,7 +13,13 @@ export const getUserProfile = async () => {
 // Get all available tests for user
 export const getAvailableTests = async () => {
   try {
-    const response = await api.get('/user/tests');
+    // Get the current user ID from localStorage
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    const response = await api.get(`/user/assigned-tests/${userId}`);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
@@ -66,9 +72,18 @@ export const finishTest = async (testId: string) => {
 // Get user's test attempts
 export const getUserAttempts = async () => {
   try {
-    const response = await api.get('/user/attempts');
+    // Get the current user ID from localStorage
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Try the attempts endpoint - adjust this based on your actual backend endpoint
+    const response = await api.get(`/user/attempts/${userId}`);
     return response.data;
   } catch (error) {
-    throw new Error(handleError(error));
+    // If the endpoint doesn't exist, return empty array instead of throwing
+    console.warn('User attempts endpoint not available:', handleError(error));
+    return { data: [] };
   }
 };

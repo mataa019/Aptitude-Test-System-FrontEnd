@@ -40,15 +40,20 @@ export const AssignedTestsList: React.FC<AssignedTestsListProps> = ({
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {test.title}
+                {test.testTemplate?.name || test.title || 'Untitled Test'}
               </h3>
-              <p className="text-gray-600 mb-3">{test.description}</p>
+              <p className="text-gray-600 mb-3">
+                {test.testTemplate?.category || test.description || 'No description available'}
+              </p>
               <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                <span>Questions: {test.questions.length}</span>
-                <span>Time Limit: {test.timeLimit} minutes</span>
-                <span>Total Points: {test.totalPoints}</span>
+                <span>Questions: {test.testTemplate?.questions?.length || test.questions?.length || 0}</span>
+                <span>Time Limit: {test.testTemplate?.timeLimit || test.timeLimit || 'N/A'} minutes</span>
+                <span>Department: {test.testTemplate?.department || 'General'}</span>
                 {test.dueDate && (
                   <span>Due: {new Date(test.dueDate).toLocaleDateString()}</span>
+                )}
+                {test.assignedAt && (
+                  <span>Assigned: {new Date(test.assignedAt).toLocaleDateString()}</span>
                 )}
               </div>
             </div>

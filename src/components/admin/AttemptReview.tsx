@@ -20,8 +20,9 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [questionScores, setQuestionScores] = useState<{ [key: string]: number }>(() => {
     const scores: { [key: string]: number } = {};
-    attempt.test.questions.forEach(question => {
-      scores[question.id] = question.points; // Default to full points
+    const questions = attempt.test?.questions || attempt.test?.testTemplate?.questions || [];
+    questions.forEach(question => {
+      scores[question.id] = question.marks || 0; // Default to full marks
     });
     return scores;
   });
@@ -32,6 +33,11 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
 
   const calculateTotalScore = () => {
     return Object.values(questionScores).reduce((sum, score) => sum + score, 0);
+  };
+
+  const calculateMaxPoints = () => {
+    const questions = attempt.test?.questions || attempt.test?.testTemplate?.questions || [];
+    return questions.reduce((sum, question) => sum + (question.marks || 0), 0);
   };
 
   const handleMarkAttempt = async (approved: boolean = false) => {
@@ -58,6 +64,21 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
     return attempt.answers.find(answer => answer.questionId === questionId)?.answer || 'No answer provided';
   };
 
+  const parseAnswer = (answer: string | null | undefined): string => {
+    if (!answer) return '';
+    
+    if (typeof answer === 'string') {
+      try {
+        const parsed = JSON.parse(answer);
+        return Array.isArray(parsed) ? parsed.join(', ') : String(parsed);
+      } catch {
+        return answer;
+      }
+    }
+    
+    return String(answer);
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
       {/* Header */}
@@ -65,9 +86,9 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Review Attempt</h1>
         <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
           <div>
-            <p><strong>Student:</strong> {attempt.user.firstName} {attempt.user.lastName}</p>
-            <p><strong>Email:</strong> {attempt.user.email}</p>
-            <p><strong>Test:</strong> {attempt.test.title}</p>
+            <p><strong>Student:</strong> {attempt.user?.firstName} {attempt.user?.lastName}</p>
+            <p><strong>Email:</strong> {attempt.user?.email}</p>
+            <p><strong>Test:</strong> {attempt.test?.title || attempt.test?.testTemplate?.name || 'Unknown Test'}</p>
           </div>
           <div>
             <p><strong>Submitted:</strong> {new Date(attempt.submittedAt).toLocaleString()}</p>
@@ -89,7 +110,7 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
       {/* Questions and Answers */}
       <div className="space-y-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-900">Questions and Answers</h2>
-        {attempt.test.questions.map((question, index) => {
+        {(attempt.test?.questions || attempt.test?.testTemplate?.questions || []).map((question, index) => {
           const userAnswer = getUserAnswer(question.id);
           const currentScore = questionScores[question.id];
           
@@ -100,10 +121,10 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
                   {index + 1}. {question.text}
                 </h3>
                 <p className="text-sm text-gray-600 mb-2">
-                  Type: {question.type} | Max Points: {question.points}
-                  {question.correctAnswer && (
+                  Type: {question.type} | Max Points: {question.marks || 0}
+                  {question.answer && (
                     <span className="ml-2 text-green-600">
-                      Correct Answer: {question.correctAnswer}
+                      Correct Answer: {parseAnswer(question.answer)}
                     </span>
                   )}
                 </p>
@@ -119,23 +140,23 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
                   type="number"
                   label="Points"
                   value={currentScore}
-                  onChange={(e) => handleQuestionScoreChange(question.id, Math.max(0, Math.min(question.points, Number(e.target.value))))}
+                  onChange={(e) => handleQuestionScoreChange(question.id, Math.max(0, Math.min(question.marks || 0, Number(e.target.value))))}
                   min={0}
-                  max={question.points}
+                  max={question.marks || 0}
                   className="w-24"
                 />
                 <div className="flex-1">
                   <div className={`text-sm font-medium ${
-                    question.correctAnswer && userAnswer === question.correctAnswer 
-                      ? 'text-green-600' 
-                      : question.correctAnswer && userAnswer !== question.correctAnswer
-                      ? 'text-red-600'
-                      : 'text-gray-600'
+                    question.answer && (() => {
+                      const correctAnswer = parseAnswer(question.answer);
+                      return userAnswer === correctAnswer ? 'text-green-600' : 'text-red-600';
+                    })() || 'text-gray-600'
                   }`}>
-                    {question.correctAnswer 
-                      ? userAnswer === question.correctAnswer 
-                        ? '✓ Correct' 
-                        : '✗ Incorrect'
+                    {question.answer 
+                      ? (() => {
+                          const correctAnswer = parseAnswer(question.answer);
+                          return userAnswer === correctAnswer ? '✓ Correct' : '✗ Incorrect';
+                        })()
                       : 'Manual Review Required'
                     }
                   </div>
@@ -167,27 +188,27 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
           <div>
             <p className="text-gray-600">Total Score:</p>
             <p className="text-xl font-bold text-gray-900">
-              {calculateTotalScore()}/{attempt.totalPoints}
+              {calculateTotalScore()}/{attempt.totalPoints || attempt.test?.totalPoints || calculateMaxPoints()}
             </p>
           </div>
           <div>
             <p className="text-gray-600">Percentage:</p>
             <p className="text-xl font-bold text-gray-900">
-              {((calculateTotalScore() / attempt.totalPoints) * 100).toFixed(1)}%
+              {((calculateTotalScore() / (attempt.totalPoints || attempt.test?.totalPoints || calculateMaxPoints())) * 100).toFixed(1)}%
             </p>
           </div>
           <div>
             <p className="text-gray-600">Grade:</p>
             <p className={`text-xl font-bold ${
-              (calculateTotalScore() / attempt.totalPoints) * 100 >= 80
+              (calculateTotalScore() / (attempt.totalPoints || attempt.test?.totalPoints || calculateMaxPoints())) * 100 >= 80
                 ? 'text-green-600'
-                : (calculateTotalScore() / attempt.totalPoints) * 100 >= 60
+                : (calculateTotalScore() / (attempt.totalPoints || attempt.test?.totalPoints || calculateMaxPoints())) * 100 >= 60
                 ? 'text-yellow-600'
                 : 'text-red-600'
             }`}>
-              {(calculateTotalScore() / attempt.totalPoints) * 100 >= 80
+              {(calculateTotalScore() / (attempt.totalPoints || attempt.test?.totalPoints || calculateMaxPoints())) * 100 >= 80
                 ? 'A'
-                : (calculateTotalScore() / attempt.totalPoints) * 100 >= 60
+                : (calculateTotalScore() / (attempt.totalPoints || attempt.test?.totalPoints || calculateMaxPoints())) * 100 >= 60
                 ? 'B'
                 : 'C'}
             </p>

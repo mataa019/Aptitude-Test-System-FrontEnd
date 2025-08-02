@@ -1,25 +1,10 @@
-import type { User, Test, TestAnswer } from './user';
+import type { User, Test, TestAnswer, Question, TestTemplate } from './user';
 
-export interface TestTemplate {
-  id: string;
-  title: string;
-  description: string;
-  questions: Question[];
-  timeLimit: number;
-  totalPoints: number;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
+export interface AdminTestTemplate extends TestTemplate {
   isActive: boolean;
 }
 
-export interface Question {
-  id: string;
-  text: string;
-  type: 'multiple-choice' | 'text' | 'boolean';
-  options?: string[];
-  correctAnswer?: string;
-  points: number;
+export interface AdminQuestion extends Question {
   explanation?: string;
 }
 

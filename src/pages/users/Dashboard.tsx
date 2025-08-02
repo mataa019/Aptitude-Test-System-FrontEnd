@@ -37,14 +37,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
           console.log('📝 Tests response:', testsResponse);
           console.log('📊 Attempts response:', attemptsResponse);
           
-          setAssignedTests(testsResponse.data || testsResponse || []);
-          setResults(attemptsResponse.data || attemptsResponse || []);
+          // Handle the API response structure based on your backend
+          const assignedTestsData = testsResponse.data || testsResponse || [];
+          const attemptsData = attemptsResponse.data || attemptsResponse || [];
+          
+          setAssignedTests(assignedTestsData);
+          setResults(attemptsData);
         } catch (apiError: any) {
-          console.warn('⚠️ API endpoints not available yet:', apiError.message);
-          // Set mock data for development
+          console.warn('⚠️ API endpoints error:', apiError.message);
+          // Don't completely fail - show empty dashboard with error info
           setAssignedTests([]);
           setResults([]);
-          // Don't set error state - just show empty dashboard
         }
       } catch (err: any) {
         console.error('❌ Dashboard data fetch error:', err);
