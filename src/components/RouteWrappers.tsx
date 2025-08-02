@@ -3,12 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 // Page Components
-import { Dashboard as DashboardPage } from '../pages/Dashboard';
-import { Test as TestPage } from '../pages/Test';
-import { Results as ResultsPage } from '../pages/Results';
-import { AdminDashboard as AdminDashboardPage } from '../pages/admin/Dashboard';
-import { Attempts as AttemptsPage } from '../pages/admin/Attempts';
-import { Review as ReviewPage } from '../pages/admin/Review';
+import { Dashboard as DashboardPage, Test as TestPage, Results as ResultsPage } from '../pages/users';
+import { AdminDashboard as AdminDashboardPage, Attempts as AttemptsPage, Review as ReviewPage } from '../pages/admin';
 
 // Wrapper Components with Router integration
 export const Dashboard: React.FC = () => {

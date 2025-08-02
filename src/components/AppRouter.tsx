@@ -19,21 +19,23 @@ import {
 
 export const AppRouter: React.FC = () => {
   const { isAuthenticated, user, login } = useAuth();
-  const [showAuth, setShowAuth] = React.useState(false);
+  const [authState, setAuthState] = React.useState<'none' | 'user' | 'admin'>('none');
 
   if (!isAuthenticated) {
-    if (showAuth) {
+    if (authState === 'user' || authState === 'admin') {
       return (
         <Auth 
           onAuthSuccess={login}
-          onBackToLanding={() => setShowAuth(false)}
+          onBackToLanding={() => setAuthState('none')}
+          isAdminMode={authState === 'admin'}
         />
       );
     }
     return (
       <LandingPage 
-        onGetStarted={() => setShowAuth(true)}
-        onLogin={() => setShowAuth(true)}
+        onGetStarted={() => setAuthState('user')}
+        onLogin={() => setAuthState('user')}
+        onAdminLogin={() => setAuthState('admin')}
       />
     );
   }

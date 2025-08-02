@@ -1,31 +1,18 @@
 import React, { useState } from 'react';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import axios from '../api/axios';
-
-// Authentication functions
-const authAPI = {
-  login: async (credentials: { email: string; password: string }) => {
-    const response = await axios.post('/auth/login', credentials);
-    return response.data;
-  },
-  register: async (userData: { 
-    email: string; 
-    password: string; 
-    name: string; // Changed to match backend format
-  }) => {
-    const response = await axios.post('/auth/register', userData);
-    return response.data;
-  }
-};
+import { login, register } from '../api/auth';
 
 interface AuthProps {
   onAuthSuccess: (token: string, user: any) => void;
   onBackToLanding?: () => void;
+  isAdminMode?: boolean;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) => {
+export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding, isAdminMode = false }) => {
   const [isLogin, setIsLogin] = useState(true);
+  // For admin mode, always show login (no registration for admins)
+  const actualIsLogin = isAdminMode || isLogin;
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -53,11 +40,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
     try {
       let response;
       
-      if (isLogin) {
-        response = await authAPI.login({
-          email: formData.email,
-          password: formData.password
-        });
+      if (actualIsLogin) {
+        response = await login(formData.email, formData.password);
+        // Login returns token and user data (automatically stored by the auth function)
+        onAuthSuccess(response.token, response.user);
       } else {
         // Validate passwords match for registration
         if (formData.password !== formData.confirmPassword) {
@@ -73,20 +59,18 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
           return;
         }
 
-        response = await authAPI.register({
-          email: formData.email,
-          password: formData.password,
-          name: `${formData.firstName} ${formData.lastName}` // Combine first and last name
-        });
+        response = await register(
+          `${formData.firstName} ${formData.lastName}`,
+          formData.email,
+          formData.password
+        );
+        
+        // Registration successful - automatically login the user
+        const loginResponse = await login(formData.email, formData.password);
+        onAuthSuccess(loginResponse.token, loginResponse.user);
       }
-      
-      // Store token and user data (using access_token from your backend)
-      localStorage.setItem('authToken', response.access_token);
-      localStorage.setItem('userId', response.user?.id);
-      
-      onAuthSuccess(response.access_token, response.user);
     } catch (err: any) {
-      setError(err.response?.data?.message || `${isLogin ? 'Login' : 'Registration'} failed. Please try again.`);
+      setError(err.message || `${actualIsLogin ? 'Login' : 'Registration'} failed. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -112,9 +96,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-            <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {isLogin ? (
+          <div className={`mx-auto h-12 w-12 flex items-center justify-center rounded-full ${isAdminMode ? 'bg-red-100' : 'bg-blue-100'}`}>
+            <svg className={`h-6 w-6 ${isAdminMode ? 'text-red-600' : 'text-blue-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {actualIsLogin ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -122,20 +106,27 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
             </svg>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isLogin ? 'Sign in to your account' : 'Create your account'}
+            {isAdminMode ? 'Admin Sign In' : 
+              (actualIsLogin ? 'Sign in to your account' : 'Create your account')
+            }
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button
-              type="button"
-              onClick={switchMode}
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              {isLogin ? 'Create one here' : 'Sign in here'}
-            </button>
+            {isAdminMode ? 'Access the admin dashboard' : 
+              (actualIsLogin ? "Don't have an account? " : 'Already have an account? ')
+            }
+            {/* Only show registration toggle for users, not admins */}
+            {!isAdminMode && (
+              <button
+                type="button"
+                onClick={switchMode}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                {actualIsLogin ? 'Create one here' : 'Sign in here'}
+              </button>
+            )}
             {onBackToLanding && (
               <>
-                {' | '}
+                {!isAdminMode && ' | '}
                 <button
                   type="button"
                   onClick={onBackToLanding}
@@ -150,8 +141,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {/* Name Fields - Only for Registration */}
-            {!isLogin && (
+            {/* Name Fields - Only for Registration and not for Admin mode */}
+            {!actualIsLogin && !isAdminMode && (
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="First Name"
@@ -193,11 +184,11 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
               required
               value={formData.password}
               onChange={handleInputChange}
-              placeholder={isLogin ? "Enter your password" : "Enter a strong password"}
+              placeholder={actualIsLogin ? "Enter your password" : "Enter a strong password"}
             />
             
-            {/* Confirm Password - Only for Registration */}
-            {!isLogin && (
+            {/* Confirm Password - Only for Registration and not for Admin mode */}
+            {!actualIsLogin && !isAdminMode && (
               <Input
                 label="Confirm Password"
                 name="confirmPassword"
@@ -210,8 +201,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
             )}
           </div>
 
-          {/* Password Requirements - Only for Registration */}
-          {!isLogin && (
+          {/* Password Requirements - Only for Registration (not for admin) */}
+          {!actualIsLogin && (
             <div className="text-xs text-gray-500 space-y-1">
               <p>Password requirements:</p>
               <ul className="list-disc list-inside space-y-0.5 ml-2">
@@ -235,14 +226,14 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) =>
             className="w-full"
           >
             {loading 
-              ? (isLogin ? 'Signing in...' : 'Creating account...') 
-              : (isLogin ? 'Sign in' : 'Create Account')
+              ? (actualIsLogin ? 'Signing in...' : 'Creating account...') 
+              : (actualIsLogin ? (isAdminMode ? 'Admin Sign In' : 'Sign in') : 'Create Account')
             }
           </Button>
         </form>
 
-        {/* Terms and Privacy - Only for Registration */}
-        {!isLogin && (
+        {/* Terms and Privacy - Only for Registration and not for Admin mode */}
+        {!actualIsLogin && !isAdminMode && (
           <div className="text-center">
             <p className="text-xs text-gray-500">
               By creating an account, you agree to our{' '}

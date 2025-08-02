@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ResultsList } from '../components/user/ResultsList';
-import { getUserAttempts } from '../api/user';
+import { ResultsList } from '../../components/user/ResultsList';
+import { getUserAttempts } from '../../api/user';
 
 interface ResultsProps {
   onBack: () => void;

@@ -4,9 +4,10 @@ import { Button } from '../components/common/Button';
 interface LandingPageProps {
   onGetStarted: () => void;
   onLogin: () => void;
+  onAdminLogin?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin, onAdminLogin }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation */}
@@ -23,7 +24,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
                 onClick={onLogin}
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
               >
-                Sign In
+                User Sign In
+              </button>
+              <button
+                onClick={() => onAdminLogin?.()}
+                className="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Admin Login
               </button>
               <Button
                 onClick={onGetStarted}
@@ -66,7 +73,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
                       onClick={onLogin}
                       className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10"
                     >
-                      Already have an account?
+                      User Login
+                    </button>
+                  </div>
+                  <div className="mt-3 sm:mt-0 sm:ml-3">
+                    <button
+                      onClick={() => onAdminLogin?.()}
+                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 md:py-4 md:text-lg md:px-10"
+                    >
+                      Admin Login
                     </button>
                   </div>
                 </div>

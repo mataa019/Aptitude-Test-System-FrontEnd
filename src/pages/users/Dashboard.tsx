@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AssignedTestsList } from '../components/user/AssignedTestsList';
-import { ResultsList } from '../components/user/ResultsList';
-import { getAvailableTests, getUserAttempts } from '../api/user';
+import { AssignedTestsList } from '../../components/user/AssignedTestsList';
+import { ResultsList } from '../../components/user/ResultsList';
+import { getAvailableTests, getUserAttempts } from '../../api/user';
 
 interface DashboardProps {
   user: any;

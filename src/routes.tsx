@@ -3,14 +3,16 @@ import { Navigate, type RouteObject, useParams, useNavigate } from 'react-router
 
 // Lazy load components for better performance
 const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
-const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
-const Test = lazy(() => import('./pages/Test').then(m => ({ default: m.Test })));
-const Results = lazy(() => import('./pages/Results').then(m => ({ default: m.Results })));
+
+// User pages
+const Dashboard = lazy(() => import('./pages/users').then(m => ({ default: m.Dashboard })));
+const Test = lazy(() => import('./pages/users').then(m => ({ default: m.Test })));
+const Results = lazy(() => import('./pages/users').then(m => ({ default: m.Results })));
 
 // Admin pages
-const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard })));
-const Attempts = lazy(() => import('./pages/admin/Attempts').then(m => ({ default: m.Attempts })));
-const Review = lazy(() => import('./pages/admin/Review').then(m => ({ default: m.Review })));
+const AdminDashboard = lazy(() => import('./pages/admin').then(m => ({ default: m.AdminDashboard })));
+const Attempts = lazy(() => import('./pages/admin').then(m => ({ default: m.Attempts })));
+const Review = lazy(() => import('./pages/admin').then(m => ({ default: m.Review })));
 
 // Route wrapper components that handle routing props
 const TestWrapper = () => {

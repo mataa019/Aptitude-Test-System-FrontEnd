@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminNav } from '../../components/admin/AdminNav';
-import { getTestResults } from '../../api/admin';
+import { getDashboardStats } from '../../api/admin';
 
 interface AdminDashboardProps {
   user: any;
@@ -23,8 +23,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setLoading(true);
         setError(null);
         
-        // For now, we'll use mock data since there's no specific dashboard endpoint
-        // You can replace this with actual API calls when available
+        // Use the real dashboard stats API
+        const statsData = await getDashboardStats();
+        setDashboardStats(statsData);
+      } catch (err: any) {
+        // If API fails, fall back to mock data for development
+        console.warn('Dashboard API failed, using mock data:', err.message);
+        
         const mockStats = {
           totalTemplates: 5,
           totalAttempts: 25,
@@ -50,9 +55,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         };
         
         setDashboardStats(mockStats);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', err);
+        setError('Using sample data - dashboard API not available');
       } finally {
         setLoading(false);
       }

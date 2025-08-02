@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { TestTakingForm } from '../components/user/TestTakingForm';
-import { Loader } from '../components/common/Loader';
-import { getTestById, startTest, submitAnswer, finishTest } from '../api/user';
-import type { TestAnswer } from '../types/user';
+import { TestTakingForm } from '../../components/user/TestTakingForm';
+import { Loader } from '../../components/common/Loader';
+import { getTestById, startTest, submitAnswer, finishTest } from '../../api/user';
+import type { TestAnswer } from '../../types/user';
 
 interface TestProps {
   testId: string;
