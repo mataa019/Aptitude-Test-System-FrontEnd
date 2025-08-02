@@ -9,9 +9,9 @@ import {
 
 export const useAdmin = () => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [currentAttempt, setCurrentAttempt] = useState<Attempt | null>(null);
+  const [currentAttempt] = useState<Attempt | null>(null);
   const [templates, setTemplates] = useState<TestTemplate[]>([]);
-  const [dashboardStats, setDashboardStats] = useState<AdminDashboardStats | null>(null);
+  const [dashboardStats] = useState<AdminDashboardStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -22,9 +22,10 @@ const authAPI = {
 
 interface AuthProps {
   onAuthSuccess: (token: string, user: any) => void;
+  onBackToLanding?: () => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
+export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
@@ -134,6 +135,18 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
             >
               {isLogin ? 'Create one here' : 'Sign in here'}
             </button>
+            {onBackToLanding && (
+              <>
+                {' | '}
+                <button
+                  type="button"
+                  onClick={onBackToLanding}
+                  className="font-medium text-gray-600 hover:text-gray-500"
+                >
+                  Back to Home
+                </button>
+              </>
+            )}
           </p>
         </div>
         

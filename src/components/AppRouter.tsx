@@ -1,15 +1,14 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader } from '../components/common/Loader';
 
 // Import pages
 import { Auth } from '../pages/Auth';
+import { LandingPage } from '../pages/LandingPage';
 
 // Import routes and wrapper components
 import { 
-  userRoutes, 
-  adminRoutes,
   DashboardWrapper,
   TestWrapper,
   ResultsWrapper,
@@ -20,9 +19,23 @@ import {
 
 export const AppRouter: React.FC = () => {
   const { isAuthenticated, user, login } = useAuth();
+  const [showAuth, setShowAuth] = React.useState(false);
 
   if (!isAuthenticated) {
-    return <Auth onAuthSuccess={login} />;
+    if (showAuth) {
+      return (
+        <Auth 
+          onAuthSuccess={login}
+          onBackToLanding={() => setShowAuth(false)}
+        />
+      );
+    }
+    return (
+      <LandingPage 
+        onGetStarted={() => setShowAuth(true)}
+        onLogin={() => setShowAuth(true)}
+      />
+    );
   }
 
   const isAdmin = user?.role === 'admin';
