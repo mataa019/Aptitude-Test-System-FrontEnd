@@ -5,6 +5,7 @@ import { Loader } from '../components/common/Loader';
 
 // Import pages
 import { Login } from '../pages/Login';
+import { Register } from '../pages/Register';
 
 // Import route wrappers
 import { 
@@ -18,9 +19,23 @@ import {
 
 export const AppRouter: React.FC = () => {
   const { isAuthenticated, user, login } = useAuth();
+  const [showRegister, setShowRegister] = React.useState(false);
 
   if (!isAuthenticated) {
-    return <Login onLoginSuccess={login} />;
+    if (showRegister) {
+      return (
+        <Register 
+          onRegisterSuccess={login}
+          onSwitchToLogin={() => setShowRegister(false)}
+        />
+      );
+    }
+    return (
+      <Login 
+        onLoginSuccess={login}
+        onSwitchToRegister={() => setShowRegister(true)}
+      />
+    );
   }
 
   const isAdmin = user?.role === 'admin';

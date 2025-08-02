@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import * as authAPI from '../api/auth';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
+  onSwitchToRegister: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    firstName: '',
-    lastName: ''
+    password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,25 +31,18 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError(null);
 
     try {
-      if (isLogin) {
-        const response = await loginUser({
-          email: formData.email,
-          password: formData.password
-        });
-        localStorage.setItem('authToken', response.token);
-        onLoginSuccess(response.token, response.user);
-      } else {
-        const response = await registerUser({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName
-        });
-        localStorage.setItem('authToken', response.token);
-        onLoginSuccess(response.token, response.user);
-      }
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
+      });
+      
+      // Store token and user data
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('userId', response.user?.id);
+      
+      onLoginSuccess(response.token, response.user);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Authentication failed');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -60,45 +52,27 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
+            <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+          </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isLogin ? 'Sign in to your account' : 'Create your account'}
+            Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
+            Don't have an account?{' '}
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError(null);
-              }}
+              onClick={onSwitchToRegister}
               className="font-medium text-blue-600 hover:text-blue-500"
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
+              Create one here
             </button>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {!isLogin && (
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="First Name"
-                  name="firstName"
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                />
-                <Input
-                  label="Last Name"
-                  name="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                />
-              </div>
-            )}
             <Input
               label="Email address"
               name="email"
@@ -106,6 +80,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               required
               value={formData.email}
               onChange={handleInputChange}
+              placeholder="john.doe@example.com"
             />
             <Input
               label="Password"
@@ -114,6 +89,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               required
               value={formData.password}
               onChange={handleInputChange}
+              placeholder="Enter your password"
             />
           </div>
 
@@ -130,7 +106,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             isLoading={loading}
             className="w-full"
           >
-            {loading ? 'Please wait...' : isLogin ? 'Sign in' : 'Sign up'}
+            {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
       </div>
