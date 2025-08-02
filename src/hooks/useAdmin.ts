@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react';
-import type { Attempt, TestTemplate, MarkingDTO, AdminDashboardStats } from '../types/admin';
+import { useState } from 'react';
+import type { Attempt, TestTemplate, AdminDashboardStats } from '../types/admin';
 import { 
-  getAllAttempts, 
-  getTemplateAttempts, 
-  getAttemptDetails, 
-  markAttempt, 
-  approveAttempt,
-  getTestTemplates,
+  getTestAttemptsWithAnswers,
+  getTestTemplateWithQuestions,
+  markAttempt,
   createTestTemplate
 } from '../api/admin';
 
@@ -18,147 +15,88 @@ export const useAdmin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAllAttempts = async () => {
+  // Fetch attempts for a specific test template
+  const fetchTemplateAttempts = async (testTemplateId: string) => {
     try {
       setLoading(true);
       setError(null);
-      const allAttempts = await getAllAttempts();
-      setAttempts(allAttempts);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch attempts');
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await getTestAttemptsWithAnswers(testTemplateId, token);
+      const attemptData = response.data.data || response.data;
+      setAttempts(attemptData);
+      return attemptData;
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to fetch template attempts';
+      setError(errorMsg);
+      throw new Error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTemplateAttempts = async (templateId: string) => {
+  // Get specific template with questions
+  const fetchTemplateDetails = async (testTemplateId: string) => {
     try {
       setLoading(true);
       setError(null);
-      const templateAttempts = await getTemplateAttempts(templateId);
-      setAttempts(templateAttempts);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch template attempts');
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await getTestTemplateWithQuestions(testTemplateId, token);
+      const templateData = response.data.data || response.data;
+      return templateData;
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to fetch template details';
+      setError(errorMsg);
+      throw new Error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAttemptDetails = async (attemptId: string) => {
+  // Mark an attempt with score and approval status
+  const markAttemptById = async (attemptId: string, score: number, approved: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
-      const attempt = await getAttemptDetails(attemptId);
-      setCurrentAttempt(attempt);
-      return attempt;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch attempt details');
-      throw err;
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await markAttempt(attemptId, score, approved, token);
+      return response.data;
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to mark attempt';
+      setError(errorMsg);
+      throw new Error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const markAttemptById = async (attemptId: string, markingData: MarkingDTO) => {
+  // Create new test template
+  const createNewTemplate = async (template: any) => {
     try {
       setLoading(true);
       setError(null);
-      await markAttempt(attemptId, markingData);
-      // Refresh attempts and current attempt
-      await Promise.all([
-        fetchAllAttempts(),
-        currentAttempt && fetchAttemptDetails(currentAttempt.id)
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to mark attempt');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const approveAttemptById = async (attemptId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      await approveAttempt(attemptId);
-      // Refresh attempts and current attempt
-      await Promise.all([
-        fetchAllAttempts(),
-        currentAttempt && fetchAttemptDetails(currentAttempt.id)
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve attempt');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTestTemplates = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const allTemplates = await getTestTemplates();
-      setTemplates(allTemplates);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch templates');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTemplate = async (template: Partial<TestTemplate>) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const newTemplate = await createTestTemplate(template);
-      await fetchTestTemplates(); // Refresh templates
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await createTestTemplate(template, token);
+      const newTemplate = response.data.data || response.data;
+      setTemplates(prev => [...prev, newTemplate]);
       return newTemplate;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create template');
-      throw err;
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to create template';
+      setError(errorMsg);
+      throw new Error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateDashboardStats = () => {
-    if (attempts.length === 0) return null;
-
-    const stats: AdminDashboardStats = {
-      totalTemplates: templates.length,
-      totalAttempts: attempts.length,
-      pendingReviews: attempts.filter(a => a.status === 'submitted').length,
-      recentActivity: attempts
-        .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-        .slice(0, 5)
-        .map(attempt => ({
-          id: attempt.id,
-          type: 'attempt_submitted' as const,
-          description: `${attempt.user.firstName} ${attempt.user.lastName} submitted ${attempt.test.title}`,
-          timestamp: attempt.submittedAt,
-          userId: attempt.userId,
-          userName: `${attempt.user.firstName} ${attempt.user.lastName}`
-        }))
-    };
-
-    setDashboardStats(stats);
-    return stats;
-  };
-
-  const clearCurrentAttempt = () => {
-    setCurrentAttempt(null);
-  };
-
-  useEffect(() => {
-    fetchAllAttempts();
-    fetchTestTemplates();
-  }, []);
-
-  useEffect(() => {
-    calculateDashboardStats();
-  }, [attempts, templates]);
+  const clearError = () => setError(null);
 
   return {
     attempts,
@@ -167,14 +105,11 @@ export const useAdmin = () => {
     dashboardStats,
     loading,
     error,
-    fetchAllAttempts,
     fetchTemplateAttempts,
-    fetchAttemptDetails,
+    fetchTemplateDetails,
     markAttemptById,
-    approveAttemptById,
-    fetchTestTemplates,
-    createTemplate,
-    clearCurrentAttempt,
+    createNewTemplate,
+    clearError,
     setError
   };
 };
