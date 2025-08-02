@@ -1,23 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import axios from '../api/axios';
-
-// Authentication functions directly in this file
-const authAPI = {
-  login: async (credentials: { email: string; password: string }) => {
-    const response = await axios.post('/auth/login', credentials);
-    return response.data;
-  },
-  register: async (userData: { 
-    name: string;
-    email: string; 
-    password: string; 
-  }) => {
-    const response = await axios.post('/auth/register', userData);
-    return response.data;
-  }
-};
+import { authAPI, apiUtils } from '../api';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
@@ -31,6 +15,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Test connection function
+  const testConnection = async () => {
+    try {
+      console.log('Testing backend connection...');
+      await authAPI.testConnection();
+      alert('Backend connection successful!');
+    } catch (err) {
+      console.error('Connection test failed:', err);
+      const errorMessage = apiUtils.handleApiError(err);
+      alert(`Backend connection failed: ${errorMessage}\nPlease check if the backend server is running on http://localhost:3000`);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -47,18 +44,21 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
     setError(null);
 
     try {
+      console.log('Attempting login with:', { email: formData.email });
+      
       const response = await authAPI.login({
         email: formData.email,
         password: formData.password
       });
       
-      // Store token and user data (using access_token from your backend)
-      localStorage.setItem('authToken', response.access_token);
-      localStorage.setItem('userId', response.user?.id);
+      console.log('Login response:', response);
       
-      onLoginSuccess(response.access_token, response.user);
+      // Token and user ID are already stored by authAPI.login
+      onLoginSuccess(response.token, response.user);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login error:', err);
+      const errorMessage = apiUtils.handleApiError(err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -124,6 +124,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSwitchToRegister
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
+
+          {/* Test Connection Button - for debugging */}
+          <button
+            type="button"
+            onClick={testConnection}
+            className="w-full px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Test Backend Connection
+          </button>
         </form>
       </div>
     </div>

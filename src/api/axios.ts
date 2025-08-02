@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: 'http://localhost:3000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -27,11 +27,25 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.error('API Error:', error); // Add detailed error logging
+    
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      localStorage.removeItem('userId');
+      window.location.href = '/';
     }
+    
+    // Log the full error details for debugging
+    if (error.response) {
+      console.error('Response error:', error.response.data);
+      console.error('Status:', error.response.status);
+    } else if (error.request) {
+      console.error('Request error:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    
     return Promise.reject(error);
   }
 );
