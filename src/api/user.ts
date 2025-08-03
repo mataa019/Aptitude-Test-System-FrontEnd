@@ -39,9 +39,15 @@ export const getTestById = async (testId: string) => {
 // Start a test
 export const startTest = async (testId: string) => {
   try {
-    const response = await api.post(`/user/tests/${testId}/start`);
+    const response = await api.post(`/user/test/${testId}/start`);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    // Check if it's the "already started" error
+    if (error.response?.status === 400 && 
+        error.response?.data?.message?.includes('Test already started')) {
+      console.log('Test already started, continuing...');
+      return { message: 'Test already started', status: 'started' };
+    }
     throw new Error(handleError(error));
   }
 };
@@ -49,11 +55,23 @@ export const startTest = async (testId: string) => {
 // Submit answers for a test
 export const submitAnswers = async (testId: string, answers: any[]) => {
   try {
-    const response = await api.post(`/user/tests/${testId}/submit`, {
-      answers
-    });
+    console.log('Submitting answers:', { testId, answers });
+    
+    // Try different data formats that the backend might expect
+    const payload = {
+      answers: answers.map(answer => ({
+        questionId: answer.questionId,
+        answer: answer.answer
+      }))
+    };
+    
+    console.log('Payload being sent:', payload);
+    
+    const response = await api.post(`/user/test/${testId}/submit`, payload);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Submit answers error:', error);
+    console.error('Error response:', error.response?.data);
     throw new Error(handleError(error));
   }
 };
@@ -61,7 +79,7 @@ export const submitAnswers = async (testId: string, answers: any[]) => {
 // Submit an answer (individual - keeping for backward compatibility)
 export const submitAnswer = async (testId: string, questionId: string, answer: any) => {
   try {
-    const response = await api.post(`/user/tests/${testId}/answers`, {
+    const response = await api.post(`/user/test/${testId}/answers`, {
       questionId,
       answer,
     });
@@ -74,7 +92,7 @@ export const submitAnswer = async (testId: string, questionId: string, answer: a
 // Complete a test
 export const finishTest = async (testId: string) => {
   try {
-    const response = await api.post(`/user/tests/${testId}/complete`);
+    const response = await api.post(`/user/test/${testId}/complete`);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));

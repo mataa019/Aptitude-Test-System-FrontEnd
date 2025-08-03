@@ -27,6 +27,13 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
         // The API now returns { message: "Test fetched successfully", data: {...} }
         const testData = response.data || response;
         setCurrentTest(testData);
+        
+        // Check if this is an assignment (from assigned tests) that has a status
+        // If the test assignment status is 'in-progress' or 'started', automatically start
+        if (testData.status === 'in-progress' || testData.status === 'started') {
+          console.log('Test already in progress, skipping start step');
+          setIsStarted(true);
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load test');
         console.error('Failed to load test:', err);
@@ -45,11 +52,27 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
       setIsSubmitting(true);
       setError(null);
       
-      await startTest(testId);
+      // Check if test is already started
+      if (currentTest?.status === 'in-progress' || currentTest?.status === 'started') {
+        console.log('Test already started, proceeding to test form');
+        setIsStarted(true);
+        return;
+      }
+      
+      const result = await startTest(testId);
+      console.log('Start test result:', result);
       setIsStarted(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to start test');
       console.error('Failed to start test:', err);
+      
+      // If error is about test already started, just proceed
+      if (err.message.includes("already started") || err.message.includes("Current status: started")) {
+        console.log('Test was already started, proceeding to test form');
+        setIsStarted(true);
+        setError(null);
+      } else {
+        setError(err.message || 'Failed to start test');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -59,6 +82,8 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
     try {
       setIsSubmitting(true);
       setError(null);
+      
+      console.log(`Submitting test with ${answers.length} answers after ${timeSpent} seconds`);
       
       // Submit all answers at once
       await submitAnswers(testId, answers);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Test, TestAnswer, Question, TestTemplate } from '../../types/user';
 import { Button } from '../common/Button';
 
@@ -46,10 +46,28 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
   
   const [timeLeft, setTimeLeft] = useState(getTimeLimit() * 60); // Convert minutes to seconds
 
+  const handleAnswerChange = (questionId: string, answer: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: answer }));
+  };
+
+  const handleSubmit = useCallback(() => {
+    const testAnswers: TestAnswer[] = Object.entries(answers).map(([questionId, answer]) => ({
+      questionId,
+      answer
+    }));
+    
+    console.log('Form answers before submit:', { answers, testAnswers });
+    
+    const testTimeLimit = getTimeLimit();
+    const timeSpent = (testTimeLimit * 60 - timeLeft) / 60; // Convert back to minutes
+    onSubmit(testAnswers, timeSpent);
+  }, [answers, timeLeft, onSubmit, getTimeLimit]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
+          console.log('Time expired, auto-submitting test');
           handleSubmit();
           return 0;
         }
@@ -58,22 +76,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
-
-  const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answer }));
-  };
-
-  const handleSubmit = () => {
-    const testAnswers: TestAnswer[] = Object.entries(answers).map(([questionId, answer]) => ({
-      questionId,
-      answer
-    }));
-    
-    const testTimeLimit = getTimeLimit();
-    const timeSpent = (testTimeLimit * 60 - timeLeft) / 60; // Convert back to minutes
-    onSubmit(testAnswers, timeSpent);
-  };
+  }, [handleSubmit]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
