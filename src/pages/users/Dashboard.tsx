@@ -26,23 +26,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
         setError(null);
         
         console.log('🔍 Dashboard: Fetching data for user:', user);
+        console.log('🔍 Current userId from localStorage:', localStorage.getItem('userId'));
         
         // Try to fetch data, but don't fail if endpoints don't exist
         try {
+          console.log('🔄 Starting API calls...');
           const [testsResponse, resultsResponse] = await Promise.all([
             getAvailableTests(),
             getUserResults()
           ]);
           
-          console.log('📝 Tests response:', testsResponse);
-          console.log('📊 Results response:', resultsResponse);
+          console.log('📝 Raw tests response:', testsResponse);
+          console.log('📊 Raw results response:', resultsResponse);
           
           // Handle the API response structure based on your backend
-          const assignedTestsData = testsResponse.data || testsResponse || [];
+          // testsResponse should have structure: { message: "...", data: [...] }
+          const assignedTestsData = testsResponse.data || [];
+          // resultsResponse should have structure: { message: "...", data: [...] } or direct array
           const resultsData = resultsResponse.data || resultsResponse || [];
           
-          setAssignedTests(assignedTestsData);
-          setResults(resultsData);
+          console.log('📝 Parsed assigned tests:', assignedTestsData);
+          console.log('� Assigned tests count:', Array.isArray(assignedTestsData) ? assignedTestsData.length : 'Not an array');
+          console.log('�📊 Parsed results:', resultsData);
+          console.log('📊 Results count:', Array.isArray(resultsData) ? resultsData.length : 'Not an array');
+          
+          setAssignedTests(Array.isArray(assignedTestsData) ? assignedTestsData : []);
+          setResults(Array.isArray(resultsData) ? resultsData : []);
         } catch (apiError: any) {
           console.warn('⚠️ API endpoints error:', apiError.message);
           // Don't completely fail - show empty dashboard with error info
@@ -162,7 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Show development notice if no data */}
+          {/* Show info message if no data */}
           {assignedTests.length === 0 && results.length === 0 && !loading && (
             <div className="col-span-1 lg:col-span-2 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
               <div className="flex">
@@ -173,9 +182,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="ml-3">
                   <p className="text-sm">
-                    <strong>Development Mode:</strong> The backend API endpoints for tests and user attempts are not configured yet. 
-                    Once your NestJS backend has the required endpoints (<code>/api/user/tests</code> and <code>/api/user/attempts</code>), 
-                    this dashboard will display your assigned tests and results.
+                    <strong>No Data Available:</strong> You don't have any assigned tests or results yet. 
+                    Tests will appear here once they are assigned to you by an administrator.
+                    {user?.email && (
+                      <>
+                        <br />
+                        <small>Logged in as: {user.email}</small>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

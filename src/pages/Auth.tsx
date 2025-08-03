@@ -22,14 +22,16 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding, isAd
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-    // Clear error when user starts typing
+    // Clear messages when user starts typing
     if (error) setError(null);
+    if (successMessage) setSuccessMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,9 +67,15 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding, isAd
           formData.password
         );
         
-        // Registration successful - automatically login the user
-        const loginResponse = await login(formData.email, formData.password);
-        onAuthSuccess(loginResponse.token, loginResponse.user);
+        // Registration successful - switch to login mode
+        console.log('Registration successful:', response);
+        setIsLogin(true); // Switch to login mode
+        resetForm(); // Clear the form
+        setError(null); // Clear any errors
+        
+        // Show success message
+        setSuccessMessage(`Registration successful! Please sign in with your email: ${formData.email}`);
+        setTimeout(() => setSuccessMessage(null), 5000); // Clear success message after 5 seconds
       }
     } catch (err: any) {
       setError(err.message || `${actualIsLogin ? 'Login' : 'Registration'} failed. Please try again.`);
@@ -85,6 +93,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding, isAd
       lastName: ''
     });
     setError(null);
+    setSuccessMessage(null);
   };
 
   const switchMode = () => {
@@ -99,9 +108,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding, isAd
           <div className={`mx-auto h-12 w-12 flex items-center justify-center rounded-full ${isAdminMode ? 'bg-red-100' : 'bg-blue-100'}`}>
             <svg className={`h-6 w-6 ${isAdminMode ? 'text-red-600' : 'text-blue-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {actualIsLogin ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               )}
             </svg>
           </div>
@@ -215,6 +224,12 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onBackToLanding, isAd
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+              {successMessage}
             </div>
           )}
 
