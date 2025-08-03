@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import type { Test, TestAnswer, Question } from '../../types/user';
+import type { Test, TestAnswer, Question, TestTemplate } from '../../types/user';
 import { Button } from '../common/Button';
 
 interface TestTakingFormProps {
-  test: Test;
+  test: Test | TestTemplate; // Accept both Test and TestTemplate
   onSubmit: (answers: TestAnswer[], timeSpent: number) => void;
   isSubmitting?: boolean;
 }
@@ -14,7 +14,37 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
   isSubmitting = false
 }) => {
   const [answers, setAnswers] = useState<{ [questionId: string]: string }>({});
-  const [timeLeft, setTimeLeft] = useState((test.timeLimit || test.testTemplate?.timeLimit || 60) * 60); // Convert minutes to seconds
+  
+  // Helper functions to extract values from either Test or TestTemplate
+  const getTimeLimit = () => {
+    if ('testTemplate' in test) {
+      return test.timeLimit || test.testTemplate?.timeLimit || 60;
+    }
+    return test.timeLimit || 60;
+  };
+  
+  const getQuestions = () => {
+    if ('testTemplate' in test) {
+      return test.questions || test.testTemplate?.questions || [];
+    }
+    return test.questions || [];
+  };
+  
+  const getTitle = () => {
+    if ('testTemplate' in test) {
+      return test.title || test.testTemplate?.name || 'Test';
+    }
+    return test.name || 'Test';
+  };
+  
+  const getDescription = () => {
+    if ('testTemplate' in test) {
+      return test.description || `${test.testTemplate?.category} - ${test.testTemplate?.department}` || '';
+    }
+    return `${test.category} - ${test.department}` || '';
+  };
+  
+  const [timeLeft, setTimeLeft] = useState(getTimeLimit() * 60); // Convert minutes to seconds
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -40,7 +70,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
       answer
     }));
     
-    const testTimeLimit = test.timeLimit || test.testTemplate?.timeLimit || 60;
+    const testTimeLimit = getTimeLimit();
     const timeSpent = (testTimeLimit * 60 - timeLeft) / 60; // Convert back to minutes
     onSubmit(testAnswers, timeSpent);
   };
@@ -141,7 +171,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
   };
 
   const answeredQuestions = Object.keys(answers).length;
-  const questions = test.questions || test.testTemplate?.questions || [];
+  const questions = getQuestions();
   const totalQuestions = questions.length;
 
   return (
@@ -149,8 +179,8 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center mb-6 pb-4 border-b">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{test.title || test.testTemplate?.name}</h1>
-          <p className="text-gray-600 mt-2">{test.description || `${test.testTemplate?.category} - ${test.testTemplate?.department}`}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{getTitle()}</h1>
+          <p className="text-gray-600 mt-2">{getDescription()}</p>
         </div>
         <div className="text-right">
           <div className={`text-2xl font-mono ${timeLeft < 300 ? 'text-red-600' : 'text-blue-600'}`}>
@@ -176,7 +206,7 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
 
       {/* Questions */}
       <div className="space-y-8 mb-8">
-        {questions.map((question, index) => renderQuestion(question, index))}
+        {questions.map((question: Question, index: number) => renderQuestion(question, index))}
       </div>
 
       {/* Submit Button */}

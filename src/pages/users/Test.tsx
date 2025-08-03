@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TestTakingForm } from '../../components/user/TestTakingForm';
 import { Loader } from '../../components/common/Loader';
-import { getTestById, startTest, submitAnswer, finishTest } from '../../api/user';
+import { getTestById, startTest, submitAnswers, finishTest } from '../../api/user';
 import type { TestAnswer } from '../../types/user';
 
 interface TestProps {
@@ -24,7 +24,9 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
         setError(null);
         
         const response = await getTestById(testId);
-        setCurrentTest(response.data || response);
+        // The API now returns { message: "Test fetched successfully", data: {...} }
+        const testData = response.data || response;
+        setCurrentTest(testData);
       } catch (err: any) {
         setError(err.message || 'Failed to load test');
         console.error('Failed to load test:', err);
@@ -58,12 +60,10 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
       setIsSubmitting(true);
       setError(null);
       
-      // Submit all answers
-      for (const answer of answers) {
-        await submitAnswer(testId, answer.questionId, answer.answer);
-      }
+      // Submit all answers at once
+      await submitAnswers(testId, answers);
       
-      // Finish the test
+      // Complete the test
       await finishTest(testId);
       onTestComplete();
     } catch (err: any) {

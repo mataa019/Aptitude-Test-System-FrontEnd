@@ -75,7 +75,7 @@ export const AssignedTestsList: React.FC<AssignedTestsListProps> = ({
           </div>
           <div className="mt-4 flex justify-end">
             <Button
-              onClick={() => onStartTest(test.id)}
+              onClick={() => onStartTest(test.testTemplateId)}
               disabled={test.status === 'completed' || test.status === 'expired'}
               variant={test.status === 'assigned' ? 'primary' : 'secondary'}
             >
