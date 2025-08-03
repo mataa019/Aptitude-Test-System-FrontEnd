@@ -71,7 +71,6 @@ const ResultsWrapper = () => {
   return (
     <Results 
       onBack={() => navigate('/dashboard')}
-      onViewDetails={(id) => console.log('View details:', id)}
     />
   );
 };

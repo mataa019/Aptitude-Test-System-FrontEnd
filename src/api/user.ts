@@ -114,19 +114,24 @@ export const getSubmittedTest = async (testId: string) => {
 // Get user's test attempts
 export const getUserAttempts = async () => {
   try {
-    // Get the current user ID from localStorage
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    
-    // Try the attempts endpoint - adjust this based on your actual backend endpoint
-    const response = await api.get(`/user/attempts/${userId}`);
+    // Use the submitted tests endpoint instead since that's what exists
+    const response = await api.get('/user/submitted-tests');
     return response.data;
   } catch (error) {
     // If the endpoint doesn't exist, return empty array instead of throwing
     console.warn('User attempts endpoint not available:', handleError(error));
     return { data: [] };
+  }
+};
+
+// Get a specific test attempt with questions and answers
+export const getTestAttempt = async (testId: string) => {
+  try {
+    // First try to get the submitted test details
+    const response = await api.get(`/user/test/${testId}/submitted`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
   }
 };
 
@@ -140,6 +145,16 @@ export const getUserResults = async (userId?: string) => {
     }
     
     const response = await api.get(`/user/results/${targetUserId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+// Get user's submitted tests for history
+export const getUserSubmittedTests = async () => {
+  try {
+    const response = await api.get('/user/submitted-tests');
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));

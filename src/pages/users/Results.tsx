@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { ResultsList } from '../../components/user/ResultsList';
+import { SubmittedTestsList } from '../../components/user/SubmittedTestsList';
+import { TestReviewForm } from '../../components/user/TestReviewForm';
 import { getUserAttempts } from '../../api/user';
 
 interface ResultsProps {
   onBack: () => void;
-  onViewDetails: (resultId: string) => void;
 }
 
-export const Results: React.FC<ResultsProps> = ({ onBack, onViewDetails }) => {
+export const Results: React.FC<ResultsProps> = ({ onBack }) => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -30,6 +31,24 @@ export const Results: React.FC<ResultsProps> = ({ onBack, onViewDetails }) => {
 
     fetchResults();
   }, []);
+
+  const handleViewTestDetails = (testId: string) => {
+    setSelectedTestId(testId);
+  };
+
+  const handleBackToList = () => {
+    setSelectedTestId(null);
+  };
+
+  // If a test is selected, show the TestReviewForm
+  if (selectedTestId) {
+    return (
+      <TestReviewForm 
+        testId={selectedTestId} 
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   if (error) {
     return (
@@ -153,9 +172,9 @@ export const Results: React.FC<ResultsProps> = ({ onBack, onViewDetails }) => {
 
         {/* Results List */}
         <div className="bg-white shadow rounded-lg p-6">
-          <ResultsList
-            results={results}
-            onViewDetails={onViewDetails}
+          <SubmittedTestsList
+            submittedTests={results}
+            onViewDetails={handleViewTestDetails}
             isLoading={loading}
           />
         </div>

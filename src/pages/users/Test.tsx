@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TestTakingForm } from '../../components/user/TestTakingForm';
 import { TestReviewForm } from '../../components/user/TestReviewForm';
 import { Loader } from '../../components/common/Loader';
-import { getTestById, startTest, submitAnswers, finishTest, getSubmittedTest } from '../../api/user';
+import { getTestById, startTest, submitAnswers, finishTest } from '../../api/user';
 import type { TestAnswer } from '../../types/user';
 
 interface TestProps {
@@ -20,7 +20,6 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
   const [isCompleted, setIsCompleted] = useState(false);
   const [submitResponse, setSubmitResponse] = useState<any>(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
-  const [reviewData, setReviewData] = useState<any>(null);
 
   useEffect(() => {
     const loadTest = async () => {
@@ -122,19 +121,11 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
 
   const handleViewAnswers = async () => {
     try {
-      setIsSubmitting(true);
       setError(null);
-      
-      const response = await getSubmittedTest(testId);
-      console.log('Submitted test data:', response);
-      
-      setReviewData(response.data);
       setIsReviewMode(true);
     } catch (err: any) {
       setError(err.message || 'Failed to load submitted test');
       console.error('Failed to load submitted test:', err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -186,9 +177,9 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Review Mode */}
-        {isReviewMode && reviewData ? (
+        {isReviewMode ? (
           <TestReviewForm 
-            testData={reviewData} 
+            testId={testId} 
             onBack={() => setIsReviewMode(false)} 
           />
         ) : (

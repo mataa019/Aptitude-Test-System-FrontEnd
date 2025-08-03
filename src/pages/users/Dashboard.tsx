@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AssignedTestsList } from '../../components/user/AssignedTestsList';
-import { ResultsList } from '../../components/user/ResultsList';
-import { getAvailableTests, getUserResults } from '../../api/user';
+import { SubmittedTestsList } from '../../components/user/SubmittedTestsList';
+import { getAvailableTests, getUserSubmittedTests } from '../../api/user';
 
 interface DashboardProps {
   user: any;
@@ -15,7 +15,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onViewResult 
 }) => {
   const [assignedTests, setAssignedTests] = useState<any[]>([]);
-  const [results, setResults] = useState<any[]>([]);
+  const [submittedTests, setSubmittedTests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,32 +31,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
         // Try to fetch data, but don't fail if endpoints don't exist
         try {
           console.log('🔄 Starting API calls...');
-          const [testsResponse, resultsResponse] = await Promise.all([
+          const [testsResponse, submittedTestsResponse] = await Promise.all([
             getAvailableTests(),
-            getUserResults()
+            getUserSubmittedTests()
           ]);
           
           console.log('📝 Raw tests response:', testsResponse);
-          console.log('📊 Raw results response:', resultsResponse);
+          console.log('📊 Raw submitted tests response:', submittedTestsResponse);
           
           // Handle the API response structure based on your backend
-          // testsResponse should have structure: { message: "...", data: [...] }
           const assignedTestsData = testsResponse.data || [];
-          // resultsResponse should have structure: { message: "...", data: [...] } or direct array
-          const resultsData = resultsResponse.data || resultsResponse || [];
+          const submittedTestsData = submittedTestsResponse.data || submittedTestsResponse || [];
           
           console.log('📝 Parsed assigned tests:', assignedTestsData);
-          console.log('� Assigned tests count:', Array.isArray(assignedTestsData) ? assignedTestsData.length : 'Not an array');
-          console.log('�📊 Parsed results:', resultsData);
-          console.log('📊 Results count:', Array.isArray(resultsData) ? resultsData.length : 'Not an array');
+          console.log('📊 Parsed submitted tests:', submittedTestsData);
           
           setAssignedTests(Array.isArray(assignedTestsData) ? assignedTestsData : []);
-          setResults(Array.isArray(resultsData) ? resultsData : []);
+          setSubmittedTests(Array.isArray(submittedTestsData) ? submittedTestsData : []);
         } catch (apiError: any) {
           console.warn('⚠️ API endpoints error:', apiError.message);
           // Don't completely fail - show empty dashboard with error info
           setAssignedTests([]);
-          setResults([]);
+          setSubmittedTests([]);
         }
       } catch (err: any) {
         console.error('❌ Dashboard data fetch error:', err);
@@ -151,17 +147,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="text-2xl">📊</div>
+                  <div className="text-2xl">📤</div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Average Score
+                      Submitted Tests
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {results.length > 0 
-                        ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
-                        : 0}%
+                      {submittedTests.length}
                     </dd>
                   </dl>
                 </div>
@@ -172,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Show info message if no data */}
-          {assignedTests.length === 0 && results.length === 0 && !loading && (
+          {assignedTests.length === 0 && submittedTests.length === 0 && !loading && (
             <div className="col-span-1 lg:col-span-2 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -182,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="ml-3">
                   <p className="text-sm">
-                    <strong>No Data Available:</strong> You don't have any assigned tests or results yet. 
+                    <strong>No Data Available:</strong> You don't have any assigned tests or submitted tests yet. 
                     Tests will appear here once they are assigned to you by an administrator.
                     {user?.email && (
                       <>
@@ -205,20 +199,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
             />
           </div>
 
-          {/* Recent Results */}
+          {/* Recent Submitted Tests */}
           <div className="bg-white shadow rounded-lg p-6">
-            <ResultsList
-              results={results.slice(0, 5)} // Show only recent 5 results
+            <SubmittedTestsList
+              submittedTests={submittedTests.slice(0, 5)} // Show only recent 5 submitted tests
               onViewDetails={onViewResult}
               isLoading={loading}
             />
-            {results.length > 5 && (
+            {submittedTests.length > 5 && (
               <div className="mt-4 text-center">
                 <button
                   onClick={() => onViewResult('all')}
                   className="text-blue-600 hover:text-blue-500 text-sm font-medium"
                 >
-                  View all results →
+                  View all submitted tests →
                 </button>
               </div>
             )}
