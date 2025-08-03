@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TestTakingForm } from '../../components/user/TestTakingForm';
+import { TestReviewForm } from '../../components/user/TestReviewForm';
 import { Loader } from '../../components/common/Loader';
-import { getTestById, startTest, submitAnswers, finishTest } from '../../api/user';
+import { getTestById, startTest, submitAnswers, finishTest, getSubmittedTest } from '../../api/user';
 import type { TestAnswer } from '../../types/user';
 
 interface TestProps {
@@ -16,6 +17,10 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
   const [currentTest, setCurrentTest] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [submitResponse, setSubmitResponse] = useState<any>(null);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [reviewData, setReviewData] = useState<any>(null);
 
   useEffect(() => {
     const loadTest = async () => {
@@ -86,14 +91,48 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
       console.log(`Submitting test with ${answers.length} answers after ${timeSpent} seconds`);
       
       // Submit all answers at once
-      await submitAnswers(testId, answers);
+      const submitResponse = await submitAnswers(testId, answers);
+      console.log('Submit response:', submitResponse);
       
-      // Complete the test
-      await finishTest(testId);
-      onTestComplete();
+      // Store the response to display success information
+      setSubmitResponse(submitResponse);
+      
+      // Check if submit was successful
+      if (submitResponse.message === "Answers submitted successfully") {
+        setIsCompleted(true);
+        
+        try {
+          // Complete the test
+          const completeResponse = await finishTest(testId);
+          console.log('Complete response:', completeResponse);
+        } catch (completeError: any) {
+          console.warn('Complete test failed, but submit was successful:', completeError);
+          // Don't throw error here since submit was successful
+        }
+      }
+      
+      // Don't call onTestComplete immediately - let user see the success screen
     } catch (err: any) {
       setError(err.message || 'Failed to submit test');
       console.error('Failed to submit test:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleViewAnswers = async () => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      const response = await getSubmittedTest(testId);
+      console.log('Submitted test data:', response);
+      
+      setReviewData(response.data);
+      setIsReviewMode(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load submitted test');
+      console.error('Failed to load submitted test:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -146,19 +185,96 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back button */}
-        <div className="mb-6">
-          <button
-            onClick={onBack}
-            className="text-blue-600 hover:text-blue-500 font-medium flex items-center"
-            disabled={isSubmitting}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
+        {/* Review Mode */}
+        {isReviewMode && reviewData ? (
+          <TestReviewForm 
+            testData={reviewData} 
+            onBack={() => setIsReviewMode(false)} 
+          />
+        ) : (
+          <>
+            {/* Back button */}
+            <div className="mb-6">
+              <button
+                onClick={onBack}
+                className="text-blue-600 hover:text-blue-500 font-medium flex items-center"
+                disabled={isSubmitting}
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
 
-        {/* Test Start Screen */}
-        {!isStarted ? (
+            {/* Test Completed Screen */}
+            {isCompleted && submitResponse ? (
+          <div className="bg-white shadow rounded-lg p-8">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Test Submitted Successfully!
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {submitResponse.message}
+              </p>
+              
+              {/* Submission Details */}
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Submission Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="text-left">
+                    <span className="font-medium text-gray-700">Submission ID:</span>
+                    <p className="text-gray-900 font-mono">{submitResponse.data.id}</p>
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium text-gray-700">Test Template ID:</span>
+                    <p className="text-gray-900 font-mono">{submitResponse.data.testTemplateId}</p>
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium text-gray-700">Started At:</span>
+                    <p className="text-gray-900">{new Date(submitResponse.data.startedAt).toLocaleString()}</p>
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium text-gray-700">Status:</span>
+                    <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium capitalize">
+                      {submitResponse.data.status}
+                    </span>
+                  </div>
+                  <div className="text-left md:col-span-2">
+                    <span className="font-medium text-gray-700">Answers Submitted:</span>
+                    <p className="text-gray-900">{JSON.parse(submitResponse.data.answers).length} answers</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={onBack}
+                  className="px-6 py-3 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-medium"
+                >
+                  Return to Dashboard
+                </button>
+                <button
+                  onClick={handleViewAnswers}
+                  disabled={isSubmitting}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 font-medium"
+                >
+                  {isSubmitting ? 'Loading...' : 'View My Answers'}
+                </button>
+                <button
+                  onClick={() => onTestComplete()}
+                  className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
+                >
+                  View Results
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : 
+        /* Test Start Screen */
+        !isStarted ? (
           <div className="bg-white shadow rounded-lg p-8">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -227,6 +343,8 @@ export const Test: React.FC<TestProps> = ({ testId, onTestComplete, onBack }) =>
               </div>
             </div>
           </>
+        )}
+        </>
         )}
       </div>
     </div>

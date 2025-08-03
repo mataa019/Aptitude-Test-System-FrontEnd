@@ -57,21 +57,23 @@ export const submitAnswers = async (testId: string, answers: any[]) => {
   try {
     console.log('Submitting answers:', { testId, answers });
     
-    // Try different data formats that the backend might expect
+    // Backend expects 'responses' array, not 'answers' array
     const payload = {
-      answers: answers.map(answer => ({
+      responses: answers.map(answer => ({
         questionId: answer.questionId,
         answer: answer.answer
       }))
     };
     
-    console.log('Payload being sent:', payload);
+    console.log('Payload being sent:', JSON.stringify(payload, null, 2));
     
     const response = await api.post(`/user/test/${testId}/submit`, payload);
+    console.log('Submit successful:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('Submit answers error:', error);
     console.error('Error response:', error.response?.data);
+    console.error('Error status:', error.response?.status);
     throw new Error(handleError(error));
   }
 };
@@ -93,6 +95,16 @@ export const submitAnswer = async (testId: string, questionId: string, answer: a
 export const finishTest = async (testId: string) => {
   try {
     const response = await api.post(`/user/test/${testId}/complete`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+// Get submitted test details with answers
+export const getSubmittedTest = async (testId: string) => {
+  try {
+    const response = await api.get(`/user/test/${testId}/submitted`);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));

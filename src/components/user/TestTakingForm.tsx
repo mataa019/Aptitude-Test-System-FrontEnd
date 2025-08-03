@@ -56,10 +56,22 @@ export const TestTakingForm: React.FC<TestTakingFormProps> = ({
       answer
     }));
     
-    console.log('Form answers before submit:', { answers, testAnswers });
+    console.log('Form answers before submit:', { 
+      totalAnswers: testAnswers.length,
+      answeredQuestions: Object.keys(answers).length,
+      testAnswers 
+    });
     
     const testTimeLimit = getTimeLimit();
     const timeSpent = (testTimeLimit * 60 - timeLeft) / 60; // Convert back to minutes
+    
+    console.log('Time info:', {
+      testTimeLimit,
+      timeLeft,
+      timeSpentMinutes: timeSpent,
+      timeSpentSeconds: testTimeLimit * 60 - timeLeft
+    });
+    
     onSubmit(testAnswers, timeSpent);
   }, [answers, timeLeft, onSubmit, getTimeLimit]);
 
