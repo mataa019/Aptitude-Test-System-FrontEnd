@@ -3,13 +3,12 @@ import { AdminNav } from '../../components/admin/AdminNav';
 import { getDashboardStats } from '../../api/admin';
 
 interface AdminDashboardProps {
-  user: any;
+  user?: any;
   currentPage: string;
   onNavigate: (page: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  user, 
   currentPage, 
   onNavigate 
 }) => {
@@ -76,7 +75,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               Admin Dashboard
             </h1>
             <p className="mt-2 text-gray-600">
-              Welcome back, {user?.firstName || 'Admin'}! Overview of system activity.
+              Welcome back, Admin! Overview of system activity.
             </p>
           </div>
 
@@ -107,7 +106,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             Test Templates
                           </dt>
                           <dd className="text-lg font-medium text-gray-900">
-                            {dashboardStats.totalTemplates}
+                            {dashboardStats?.totalTemplates || 0}
                           </dd>
                         </dl>
                       </div>
@@ -127,7 +126,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             Total Attempts
                           </dt>
                           <dd className="text-lg font-medium text-gray-900">
-                            {dashboardStats.totalAttempts}
+                            {dashboardStats?.totalAttempts || 0}
                           </dd>
                         </dl>
                       </div>
@@ -147,7 +146,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             Pending Reviews
                           </dt>
                           <dd className="text-lg font-medium text-gray-900">
-                            {dashboardStats.pendingReviews}
+                            {dashboardStats?.pendingReviews || 0}
                           </dd>
                         </dl>
                       </div>
@@ -209,34 +208,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="bg-white shadow rounded-lg p-6">
                   <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
                   <div className="flow-root">
-                    <ul className="-mb-8">
-                      {dashboardStats.recentActivity.map((activity: any, index: number) => (
-                        <li key={activity.id}>
-                          <div className="relative pb-8">
-                            {index !== dashboardStats.recentActivity.length - 1 && (
-                              <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" />
-                            )}
-                            <div className="relative flex space-x-3">
-                              <div>
-                                <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                  <span className="text-white text-sm">📋</span>
-                                </span>
-                              </div>
-                              <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                    {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
+                      <ul className="-mb-8">
+                        {dashboardStats.recentActivity.map((activity: any, index: number) => (
+                          <li key={activity.id}>
+                            <div className="relative pb-8">
+                              {index !== (dashboardStats?.recentActivity?.length || 0) - 1 && (
+                                <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" />
+                              )}
+                              <div className="relative flex space-x-3">
                                 <div>
-                                  <p className="text-sm text-gray-500">
-                                    {activity.description}
-                                  </p>
+                                  <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
+                                    <span className="text-white text-sm">📋</span>
+                                  </span>
                                 </div>
-                                <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                                  {new Date(activity.timestamp).toLocaleDateString()}
+                                <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                  <div>
+                                    <p className="text-sm text-gray-500">
+                                      {activity.description}
+                                    </p>
+                                  </div>
+                                  <div className="text-right text-sm whitespace-nowrap text-gray-500">
+                                    {new Date(activity.timestamp).toLocaleDateString()}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No recent activity found.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

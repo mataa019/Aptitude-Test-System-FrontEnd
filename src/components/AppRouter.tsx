@@ -14,6 +14,8 @@ import {
   ResultsWrapper,
   AdminDashboardWrapper,
   AttemptsWrapper,
+  TemplatesWrapper,
+  UsersWrapper,
   ReviewWrapper
 } from '../routes';
 
@@ -63,6 +65,8 @@ export const AppRouter: React.FC = () => {
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<AdminDashboardWrapper />} />
               <Route path="/admin/attempts" element={<AttemptsWrapper />} />
+              <Route path="/admin/templates" element={<TemplatesWrapper />} />
+              <Route path="/admin/users" element={<UsersWrapper />} />
               <Route path="/admin/review/:attemptId" element={<ReviewWrapper />} />
             </>
           )}

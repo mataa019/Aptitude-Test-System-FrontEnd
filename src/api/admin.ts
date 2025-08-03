@@ -1,7 +1,71 @@
 import { api, handleError } from './config';
 
-// Question Management
-export const createQuestion = async (data: any) => {
+// 📋 Test Template Management
+export const createTestTemplate = async (data: {
+  name: string;
+  category: string;
+  department: string;
+  timeLimit: number;
+  createdBy: string;
+}) => {
+  try {
+    const response = await api.post('/admin/test-templates', data);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const getAllTestTemplates = async () => {
+  try {
+    const response = await api.get('/admin/test-templates');
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const getTestTemplateById = async (templateId: string) => {
+  try {
+    const response = await api.get(`/admin/test-templates/${templateId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const updateTestTemplate = async (templateId: string, data: {
+  name?: string;
+  timeLimit?: number;
+  department?: string;
+  category?: string;
+}) => {
+  try {
+    const response = await api.put(`/admin/test-templates/${templateId}`, data);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const deleteTestTemplate = async (templateId: string) => {
+  try {
+    const response = await api.delete(`/admin/test-templates/${templateId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+// 🎯 Question Management
+export const createQuestion = async (data: {
+  testTemplateId: string;
+  type: 'multiple-choice' | 'sentence';
+  text: string;
+  options?: string[];
+  answer: string;
+  marks: number;
+}) => {
   try {
     const response = await api.post('/admin/question', data);
     return response.data;
@@ -10,35 +74,101 @@ export const createQuestion = async (data: any) => {
   }
 };
 
-export const updateQuestion = async (id: string, data: any) => {
+export const updateQuestion = async (questionId: string, data: {
+  text?: string;
+  options?: string[];
+  answer?: string;
+  marks?: number;
+}) => {
   try {
-    const response = await api.put(`/admin/question/${id}`, data);
+    const response = await api.put(`/admin/question/${questionId}`, data);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
   }
 };
 
-export const deleteQuestion = async (id: string) => {
+export const deleteQuestion = async (questionId: string) => {
   try {
-    const response = await api.delete(`/admin/question/${id}`);
+    const response = await api.delete(`/admin/question/${questionId}`);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
   }
 };
 
-// Test Assignment
-export const assignTest = async (data: { userId: string; testTemplateId: string; assignedBy: string }) => {
+// 👥 User Management
+export const getAllUsers = async () => {
   try {
-    const response = await api.post('/admin/assign-test', data);
+    const response = await api.get('/admin/users');
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
   }
 };
 
-// Results
+export const getUserById = async (userId: string) => {
+  try {
+    const response = await api.get(`/admin/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const createUser = async (data: {
+  username: string;
+  email: string;
+  fullName: string;
+  password: string;
+  role: string;
+  department: string;
+}) => {
+  try {
+    const response = await api.post('/admin/users', data);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const deleteUser = async (userId: string) => {
+  try {
+    const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+// 📝 Test Assignment
+export const assignTestToUser = async (data: { 
+  userId: string; 
+  testTemplateId: string; 
+  assignedBy?: string;
+  dueDate?: string;
+}) => {
+  try {
+    const response = await api.post('/admin/assign-test', {
+      ...data,
+      assignedBy: data.assignedBy || localStorage.getItem('userId') || 'admin'
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const getUserAssignedTests = async (userId: string) => {
+  try {
+    const response = await api.get(`/admin/users/${userId}/assigned-tests`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+// 📊 Results & Review
 export const getTestResults = async (testTemplateId: string) => {
   try {
     const response = await api.get(`/admin/results/${testTemplateId}`);
@@ -48,26 +178,6 @@ export const getTestResults = async (testTemplateId: string) => {
   }
 };
 
-// Test Template Management
-export const createTestTemplate = async (data: any) => {
-  try {
-    const response = await api.post('/admin/test-templates', data);
-    return response.data;
-  } catch (error) {
-    throw new Error(handleError(error));
-  }
-};
-
-export const getTestTemplateWithQuestions = async (testTemplateId: string) => {
-  try {
-    const response = await api.get(`/admin/test-templates/${testTemplateId}`);
-    return response.data;
-  } catch (error) {
-    throw new Error(handleError(error));
-  }
-};
-
-// Attempts Management
 export const getTestAttemptsWithAnswers = async (testTemplateId: string) => {
   try {
     const response = await api.get(`/admin/attempts/${testTemplateId}`);
@@ -77,7 +187,6 @@ export const getTestAttemptsWithAnswers = async (testTemplateId: string) => {
   }
 };
 
-// Get individual attempt by ID
 export const getAttemptById = async (attemptId: string) => {
   try {
     const response = await api.get(`/admin/attempts/single/${attemptId}`);
@@ -87,16 +196,19 @@ export const getAttemptById = async (attemptId: string) => {
   }
 };
 
-export const markAttempt = async (attemptId: string, score: number, approved: boolean) => {
+export const markTestAttempt = async (attemptId: string, markingData: {
+  score: number;
+  approved: boolean;
+}) => {
   try {
-    const response = await api.put(`/admin/attempts/${attemptId}/mark`, { score, approved });
+    const response = await api.put(`/admin/attempts/${attemptId}/mark`, markingData);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
   }
 };
 
-// Dashboard Statistics
+// 📈 Dashboard Statistics
 export const getDashboardStats = async () => {
   try {
     const response = await api.get('/admin/dashboard/stats');
@@ -105,3 +217,9 @@ export const getDashboardStats = async () => {
     throw new Error(handleError(error));
   }
 };
+
+// Legacy function names for backward compatibility
+export const assignTest = assignTestToUser;
+export const markAttempt = (attemptId: string, score: number, approved: boolean) => 
+  markTestAttempt(attemptId, { score, approved });
+export const getTestTemplateWithQuestions = getTestTemplateById;

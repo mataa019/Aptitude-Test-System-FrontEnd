@@ -13,6 +13,8 @@ const Results = lazy(() => import('./pages/users/Results').then(m => ({ default:
 // Admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard })));
 const Attempts = lazy(() => import('./pages/admin/Attempts').then(m => ({ default: m.Attempts })));
+const Templates = lazy(() => import('./pages/admin/Templates').then(m => ({ default: m.Templates })));
+const Users = lazy(() => import('./pages/admin/Users').then(m => ({ default: m.Users })));
 const Review = lazy(() => import('./pages/admin/Review').then(m => ({ default: m.Review })));
 
 // Route wrapper components that handle routing props
@@ -80,7 +82,6 @@ const AdminDashboardWrapper = () => {
   
   return (
     <AdminDashboard 
-      user={user.get()}
       currentPage="dashboard"
       onNavigate={(page) => navigate(`/admin/${page}`)}
     />
@@ -95,6 +96,28 @@ const AttemptsWrapper = () => {
       currentPage="attempts"
       onNavigate={(page) => navigate(`/admin/${page}`)}
       onReviewAttempt={(attemptId) => navigate(`/admin/review/${attemptId}`)}
+    />
+  );
+};
+
+const TemplatesWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Templates 
+      currentPage="templates"
+      onNavigate={(page) => navigate(`/admin/${page}`)}
+    />
+  );
+};
+
+const UsersWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Users 
+      currentPage="users"
+      onNavigate={(page) => navigate(`/admin/${page}`)}
     />
   );
 };
@@ -126,6 +149,8 @@ export const adminRoutes: RouteObject[] = [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: 'dashboard', element: <AdminDashboardWrapper /> },
       { path: 'attempts', element: <AttemptsWrapper /> },
+      { path: 'templates', element: <TemplatesWrapper /> },
+      { path: 'users', element: <UsersWrapper /> },
       { path: 'review/:attemptId', element: <ReviewWrapper /> },
     ]
   }
@@ -138,11 +163,15 @@ export {
   Results, 
   AdminDashboard, 
   Attempts, 
+  Templates,
+  Users,
   Review,
   TestWrapper,
   ReviewWrapper,
   DashboardWrapper,
   ResultsWrapper,
   AdminDashboardWrapper,
-  AttemptsWrapper
+  AttemptsWrapper,
+  TemplatesWrapper,
+  UsersWrapper
 };
