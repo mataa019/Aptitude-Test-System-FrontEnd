@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { SubmittedTestsList } from '../../components/user/SubmittedTestsList';
 import { TestReviewForm } from '../../components/user/TestReviewForm';
 import { getUserAttempts } from '../../api/user';
+import { useLocation } from 'react-router-dom';
 
 interface ResultsProps {
   onBack: () => void;
 }
 
 export const Results: React.FC<ResultsProps> = ({ onBack }) => {
+  const location = useLocation();
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,23 +34,43 @@ export const Results: React.FC<ResultsProps> = ({ onBack }) => {
     fetchResults();
   }, []);
 
+  // Check for test ID in URL hash and automatically show detailed view
+  useEffect(() => {
+    const hash = location.hash.substring(1); // Remove the # symbol
+    if (hash && hash !== 'all') {
+      console.log('🔗 URL hash detected, showing detailed view for:', hash);
+      setSelectedTestId(hash);
+    }
+  }, [location.hash]);
+
   const handleViewTestDetails = (testId: string) => {
+    console.log('🔍 Switching to detailed view for testId:', testId);
     setSelectedTestId(testId);
+    // Update URL hash to reflect the current view
+    window.history.replaceState(null, '', `${window.location.pathname}#${testId}`);
   };
 
   const handleBackToList = () => {
+    console.log('🔙 Returning to list view');
     setSelectedTestId(null);
+    // Clear the URL hash
+    window.history.replaceState(null, '', window.location.pathname);
   };
 
-  // If a test is selected, show the TestReviewForm
+  // If a test is selected, show ONLY the TestReviewForm
   if (selectedTestId) {
+    console.log('📋 Rendering TestReviewForm for testId:', selectedTestId);
     return (
-      <TestReviewForm 
-        testId={selectedTestId} 
-        onBack={handleBackToList}
-      />
+      <div key={`test-review-${selectedTestId}`}>
+        <TestReviewForm 
+          testId={selectedTestId} 
+          onBack={handleBackToList}
+        />
+      </div>
     );
   }
+
+  console.log('📋 Rendering Results list view');
 
   if (error) {
     return (
