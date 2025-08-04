@@ -182,6 +182,28 @@ export const assignTemplateToUser = async (data: {
   }
 };
 
+// Reassign template to user (when template is updated with new questions)
+export const reassignTemplateToUser = async (data: { 
+  userId: string; 
+  testTemplateId: string; 
+  assignedBy: string;
+  reason: string;
+  dueDate?: string;
+}) => {
+  try {
+    const response = await api.post('/admin/reassign-template', {
+      userId: data.userId,
+      testTemplateId: data.testTemplateId,
+      assignedBy: data.assignedBy,
+      reason: data.reason,
+      ...(data.dueDate && { dueDate: data.dueDate })
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
 // Get all assignments or assignments for a specific user
 export const getAssignments = async (userId?: string) => {
   try {
@@ -203,6 +225,15 @@ export const getUserAssignedTests = async (userId: string) => {
 export const getTestResults = async (testTemplateId: string) => {
   try {
     const response = await api.get(`/admin/results/${testTemplateId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const getPendingReviewAttempts = async () => {
+  try {
+    const response = await api.get('/admin/attempts/pending/review');
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));

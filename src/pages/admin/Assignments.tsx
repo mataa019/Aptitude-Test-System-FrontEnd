@@ -4,6 +4,7 @@ import {
   getAllTestTemplates, 
   getAllUsers,
   assignTemplateToUser,
+  reassignTemplateToUser,
   getUserAssignedTests
 } from '../../api/admin';
 
@@ -68,11 +69,20 @@ export const Assignments: React.FC<AssignmentsProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showAssignForm, setShowAssignForm] = useState(false);
+  const [showReassignForm, setShowReassignForm] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
     userId: '',
     testTemplateId: '',
+    dueDate: ''
+  });
+
+  // Reassignment form state
+  const [reassignData, setReassignData] = useState({
+    userId: '',
+    testTemplateId: '',
+    reason: '',
     dueDate: ''
   });
 
@@ -171,6 +181,48 @@ export const Assignments: React.FC<AssignmentsProps> = ({
     }
   };
 
+  const handleReassignTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const reassignmentData = {
+        userId: reassignData.userId,
+        testTemplateId: reassignData.testTemplateId,
+        assignedBy: localStorage.getItem('userId') || 'admin',
+        reason: reassignData.reason,
+        ...(reassignData.dueDate && { dueDate: reassignData.dueDate })
+      };
+
+      await reassignTemplateToUser(reassignmentData);
+      
+      setSuccess('Template reassigned successfully with updated questions!');
+      
+      // Reset form
+      setReassignData({
+        userId: '',
+        testTemplateId: '',
+        reason: '',
+        dueDate: ''
+      });
+      setShowReassignForm(false);
+      
+      // Refresh assignments if user is selected
+      if (selectedUser) {
+        await fetchUserAssignments(selectedUser);
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to reassign template');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startAssign = () => {
     setFormData({
       userId: selectedUser || '',
@@ -178,6 +230,18 @@ export const Assignments: React.FC<AssignmentsProps> = ({
       dueDate: ''
     });
     setShowAssignForm(true);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const startReassign = () => {
+    setReassignData({
+      userId: selectedUser || '',
+      testTemplateId: '',
+      reason: '',
+      dueDate: ''
+    });
+    setShowReassignForm(true);
     setError(null);
     setSuccess(null);
   };
@@ -265,13 +329,22 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                 Assign test templates to users and manage their assignments.
               </p>
             </div>
-            <button
-              onClick={startAssign}
-              disabled={!selectedUser}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              Assign Template
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={startAssign}
+                disabled={!selectedUser}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                Assign Template
+              </button>
+              <button
+                onClick={startReassign}
+                disabled={!selectedUser}
+                className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:bg-gray-400"
+              >
+                Reassign Template
+              </button>
+            </div>
           </div>
 
           {/* Debug Info */}
@@ -406,6 +479,117 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
                   >
                     {loading ? 'Assigning...' : templates.length === 0 ? 'No Templates Available' : 'Assign Template'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Reassignment Form */}
+          {showReassignForm && (
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Reassign Template to {getSelectedUserName()}
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Use this to reassign a template when you've added new questions or made updates.
+              </p>
+              
+              <form onSubmit={handleReassignTemplate}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      User
+                    </label>
+                    <select
+                      value={reassignData.userId}
+                      onChange={(e) => setReassignData({ ...reassignData, userId: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="">Select a user...</option>
+                      {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name} ({user.email}) - {user.department || 'No Department'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Test Template
+                    </label>
+                    {templates.length === 0 ? (
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                        No templates available. Please create a template first.
+                      </div>
+                    ) : (
+                      <select
+                        value={reassignData.testTemplateId}
+                        onChange={(e) => setReassignData({ ...reassignData, testTemplateId: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option value="">Select a template...</option>
+                        {templates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name} ({template.category}) - {template.timeLimit} min
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Reason for Reassignment
+                    </label>
+                    <textarea
+                      value={reassignData.reason}
+                      onChange={(e) => setReassignData({ ...reassignData, reason: e.target.value })}
+                      required
+                      placeholder="e.g., Added 5 new questions to Digital Innovations test"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Due Date (Optional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={reassignData.dueDate}
+                      onChange={(e) => setReassignData({ ...reassignData, dueDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReassignForm(false);
+                      setReassignData({
+                        userId: '',
+                        testTemplateId: '',
+                        reason: '',
+                        dueDate: ''
+                      });
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || templates.length === 0}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:bg-gray-400"
+                  >
+                    {loading ? 'Reassigning...' : templates.length === 0 ? 'No Templates Available' : 'Reassign Template'}
                   </button>
                 </div>
               </form>
