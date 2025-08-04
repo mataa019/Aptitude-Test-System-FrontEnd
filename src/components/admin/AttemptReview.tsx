@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Attempt } from '../../types/admin';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
-import { markAttempt } from '../../api/admin';
+import { markTestAttempt } from '../../api/admin';
 
 interface AttemptReviewProps {
   attempt: Attempt;
@@ -47,7 +47,7 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
 
       const totalScore = calculateTotalScore();
       
-      await markAttempt(attempt.id, totalScore, approved);
+      await markTestAttempt(attempt.id, { score: totalScore, approved });
       
       if (onMarkingComplete) {
         onMarkingComplete();

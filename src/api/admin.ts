@@ -182,31 +182,21 @@ export const assignTemplateToUser = async (data: {
   }
 };
 
-// Legacy function - keeping for backward compatibility
-export const assignTestToUser = async (data: { 
-  userId: string; 
-  testTemplateId: string; 
-  assignedBy?: string;
-  dueDate?: string;
-}) => {
+// Get all assignments or assignments for a specific user
+export const getAssignments = async (userId?: string) => {
   try {
-    const response = await api.post('/admin/assign-test', {
-      ...data,
-      assignedBy: data.assignedBy || localStorage.getItem('userId') || 'admin'
-    });
+    const url = userId ? `/admin/assignments?userId=${userId}` : '/admin/assignments';
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
   }
 };
 
+// Legacy function - keeping for backward compatibility
 export const getUserAssignedTests = async (userId: string) => {
-  try {
-    const response = await api.get(`/admin/users/${userId}/assigned-tests`);
-    return response.data;
-  } catch (error) {
-    throw new Error(handleError(error));
-  }
+  // Use the new getAssignments function
+  return getAssignments(userId);
 };
 
 // 📊 Results & Review
@@ -261,8 +251,6 @@ export const getDashboardStats = async () => {
 };
 
 // Legacy function names for backward compatibility
-export const assignTest = assignTestToUser;
-export const assignTemplate = assignTemplateToUser;
 export const markAttempt = (attemptId: string, score: number, approved: boolean) => 
   markTestAttempt(attemptId, { score, approved });
 export const getTestTemplateWithQuestions = getTestTemplateById;

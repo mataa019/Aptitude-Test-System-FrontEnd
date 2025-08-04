@@ -4,8 +4,7 @@ import {
   getAllUsers, 
   createUser, 
   deleteUser,
-  assignTestToUser,
-  getUserAssignedTests,
+  assignTemplateToUser,
   getAllTestTemplates
 } from '../../api/admin';
 
@@ -132,10 +131,11 @@ export const Users: React.FC<UsersProps> = ({
     
     try {
       setLoading(true);
-      await assignTestToUser({
+      await assignTemplateToUser({
         userId: showAssignTest,
         testTemplateId: assignmentData.testTemplateId,
-        dueDate: assignmentData.dueDate
+        assignedBy: localStorage.getItem('userId') || 'admin',
+        ...(assignmentData.dueDate && { dueDate: assignmentData.dueDate })
       });
       
       setAssignmentData({ testTemplateId: '', dueDate: '' });

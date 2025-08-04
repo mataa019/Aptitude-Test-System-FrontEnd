@@ -16,6 +16,7 @@ import {
   AttemptsWrapper,
   TemplatesWrapper,
   QuestionsWrapper,
+  AssignmentsWrapper,
   UsersWrapper,
   ReviewWrapper
 } from '../routes';
@@ -68,6 +69,7 @@ export const AppRouter: React.FC = () => {
               <Route path="/admin/attempts" element={<AttemptsWrapper />} />
               <Route path="/admin/templates" element={<TemplatesWrapper />} />
               <Route path="/admin/questions" element={<QuestionsWrapper />} />
+              <Route path="/admin/assignments" element={<AssignmentsWrapper />} />
               <Route path="/admin/users" element={<UsersWrapper />} />
               <Route path="/admin/review/:attemptId" element={<ReviewWrapper />} />
             </>

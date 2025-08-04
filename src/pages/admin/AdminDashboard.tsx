@@ -28,6 +28,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('AdminDashboard - Current page:', currentPage);
+  console.log('AdminDashboard - URL:', window.location.href);
+
+  const handleNavigate = (page: string) => {
+    console.log('AdminDashboard - Navigating to:', page);
+    onNavigate(page);
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -48,7 +56,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminNav currentPage={currentPage} onNavigate={onNavigate} />
+      <AdminNav currentPage={currentPage} onNavigate={handleNavigate} />
       
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,6 +66,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <p className="mt-2 text-gray-600">
               Overview of your aptitude test management system.
             </p>
+            {/* Debug Info */}
+            <div className="mt-4 p-4 bg-yellow-100 rounded">
+              <h3 className="font-semibold">Debug Info:</h3>
+              <p>Current page: {currentPage}</p>
+              <p>Current URL: {window.location.href}</p>
+            </div>
           </div>
 
           {error && (
@@ -155,25 +169,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">
                 <button
-                  onClick={() => onNavigate('templates')}
+                  onClick={() => handleNavigate('templates')}
                   className="w-full flex items-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <span className="mr-3">📋</span>
                   Manage Test Templates
                 </button>
                 <button
-                  onClick={() => onNavigate('attempts')}
+                  onClick={() => handleNavigate('attempts')}
                   className="w-full flex items-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <span className="mr-3">📝</span>
                   Review Test Attempts
                 </button>
                 <button
-                  onClick={() => onNavigate('users')}
+                  onClick={() => handleNavigate('users')}
                   className="w-full flex items-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <span className="mr-3">👥</span>
                   Manage Users
+                </button>
+                <button
+                  onClick={() => handleNavigate('assignments')}
+                  className="w-full flex items-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="mr-3">📋</span>
+                  Template Assignments
                 </button>
               </div>
             </div>

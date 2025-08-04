@@ -10,11 +10,17 @@ export const AdminNav: React.FC<AdminNavProps> = ({ currentPage, onNavigate }) =
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'templates', label: 'Templates', icon: '📝' },
     { id: 'questions', label: 'Questions', icon: '❓' },
-    { id: 'assignments', label: 'Assignments', icon: '�' },
-    { id: 'attempts', label: 'Attempts', icon: '📋' },
+    { id: 'assignments', label: 'Assignments', icon: '📋' },
+    { id: 'attempts', label: 'Attempts', icon: '📊' },
     { id: 'users', label: 'Users', icon: '👥' },
     { id: 'reports', label: 'Reports', icon: '📈' },
   ];
+
+  const handleNavClick = (pageId: string) => {
+    console.log('Navigating to:', pageId);
+    console.log('Current page:', currentPage);
+    onNavigate(pageId);
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -28,7 +34,7 @@ export const AdminNav: React.FC<AdminNavProps> = ({ currentPage, onNavigate }) =
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => handleNavClick(item.id)}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
                     currentPage === item.id
                       ? 'border-blue-500 text-gray-900'
@@ -44,7 +50,7 @@ export const AdminNav: React.FC<AdminNavProps> = ({ currentPage, onNavigate }) =
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <button
-                onClick={() => onNavigate('profile')}
+                onClick={() => handleNavClick('profile')}
                 className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <span className="sr-only">View profile</span>
@@ -63,7 +69,7 @@ export const AdminNav: React.FC<AdminNavProps> = ({ currentPage, onNavigate }) =
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium w-full text-left transition-colors duration-200 ${
                 currentPage === item.id
                   ? 'bg-blue-50 border-blue-500 text-blue-700'

@@ -23,11 +23,16 @@ interface TestTemplate {
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
-  fullName: string;
   role: string;
-  department: string;
+  department: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    assignments: number;
+    attempts: number;
+  };
 }
 
 interface Assignment {
@@ -36,10 +41,20 @@ interface Assignment {
   testTemplateId: string;
   assignedBy: string;
   assignedAt: string;
-  dueDate?: string;
   status: string;
-  user?: User;
-  testTemplate?: TestTemplate;
+  dueDate?: string;
+  testTemplate?: {
+    id: string;
+    name: string;
+    category: string;
+    timeLimit: number;
+    department: string;
+  };
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export const Assignments: React.FC<AssignmentsProps> = ({ 
@@ -58,6 +73,13 @@ export const Assignments: React.FC<AssignmentsProps> = ({
   const [formData, setFormData] = useState({
     userId: '',
     testTemplateId: '',
+    dueDate: ''
+  });
+
+  // Quick assignment state
+  const [quickAssignData, setQuickAssignData] = useState({
+    testTemplateId: '',
+    department: '',
     dueDate: ''
   });
 
@@ -81,10 +103,14 @@ export const Assignments: React.FC<AssignmentsProps> = ({
         getAllUsers()
       ]);
       
+      console.log('Users API response:', usersResponse);
+      console.log('Templates API response:', templatesResponse);
+      
       setTemplates(templatesResponse.data || []);
       setUsers(usersResponse.data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load data');
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
@@ -95,8 +121,11 @@ export const Assignments: React.FC<AssignmentsProps> = ({
       setLoading(true);
       const response = await getUserAssignedTests(userId);
       setAssignments(response.data || []);
+      setError(null); // Clear any previous errors
     } catch (err: any) {
+      console.error('Error fetching assignments:', err);
       setError(err.message || 'Failed to load user assignments');
+      setAssignments([]); // Clear assignments on error
     } finally {
       setLoading(false);
     }
@@ -153,13 +182,72 @@ export const Assignments: React.FC<AssignmentsProps> = ({
     setSuccess(null);
   };
 
-  const getSelectedUserName = () => {
-    const user = users.find(u => u.id === selectedUser);
-    return user ? `${user.fullName} (${user.username})` : '';
+  const handleQuickAssign = async () => {
+    if (!quickAssignData.testTemplateId || !quickAssignData.department) {
+      setError('Please select both template and department');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get users in the selected department
+      const usersInDepartment = users.filter(user => 
+        quickAssignData.department === '' || user.department === quickAssignData.department
+      );
+
+      if (usersInDepartment.length === 0) {
+        setError('No users found in the selected department');
+        return;
+      }
+
+      // Assign template to all users in department
+      const assignmentPromises = usersInDepartment.map(user =>
+        assignTemplateToUser({
+          userId: user.id,
+          testTemplateId: quickAssignData.testTemplateId,
+          assignedBy: 'current-admin-id', // Replace with actual admin ID
+          ...(quickAssignData.dueDate && { dueDate: quickAssignData.dueDate })
+        })
+      );
+
+      await Promise.all(assignmentPromises);
+      
+      setSuccess(`Template assigned successfully to ${usersInDepartment.length} users!`);
+      
+      // Reset form
+      setQuickAssignData({
+        testTemplateId: '',
+        department: '',
+        dueDate: ''
+      });
+      
+      // Refresh assignments if user is selected
+      if (selectedUser) {
+        await fetchUserAssignments(selectedUser);
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to assign template');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getTemplateName = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
+  const getSelectedUserName = () => {
+    const user = users.find(u => u.id === selectedUser);
+    return user ? `${user.name} (${user.email})` : '';
+  };
+
+  const getTemplateName = (assignment: Assignment) => {
+    // Use populated testTemplate data if available, otherwise fallback to templates array
+    if (assignment.testTemplate) {
+      return assignment.testTemplate.name;
+    }
+    const template = templates.find(t => t.id === assignment.testTemplateId);
     return template ? template.name : 'Unknown Template';
   };
 
@@ -186,6 +274,16 @@ export const Assignments: React.FC<AssignmentsProps> = ({
             </button>
           </div>
 
+          {/* Debug Info */}
+          <div className="bg-gray-100 p-4 rounded mb-6">
+            <h3 className="font-semibold mb-2">Debug Info:</h3>
+            <p>Users loaded: {users.length}</p>
+            <p>Templates loaded: {templates.length}</p>
+            <p>Selected user: {selectedUser}</p>
+            <p>User assignments: {assignments.length}</p>
+            <p>Show assign form: {showAssignForm ? 'Yes' : 'No'}</p>
+          </div>
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-6">
               {error}
@@ -201,18 +299,24 @@ export const Assignments: React.FC<AssignmentsProps> = ({
           {/* User Selection */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Select User</h2>
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select a user...</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.fullName} ({user.username}) - {user.department}
-                </option>
-              ))}
-            </select>
+            {users.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Loading users...</p>
+              </div>
+            ) : (
+              <select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select a user...</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.email}) - {user.department || 'No Department'}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Assignment Form */}
@@ -237,7 +341,7 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                       <option value="">Select a user...</option>
                       {users.map((user) => (
                         <option key={user.id} value={user.id}>
-                          {user.fullName} ({user.username}) - {user.department}
+                          {user.name} ({user.email}) - {user.department || 'No Department'}
                         </option>
                       ))}
                     </select>
@@ -247,19 +351,25 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Test Template
                     </label>
-                    <select
-                      value={formData.testTemplateId}
-                      onChange={(e) => setFormData({ ...formData, testTemplateId: e.target.value })}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select a template...</option>
-                      {templates.map((template) => (
-                        <option key={template.id} value={template.id}>
-                          {template.name} ({template.category}) - {template.timeLimit} min
-                        </option>
-                      ))}
-                    </select>
+                    {templates.length === 0 ? (
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                        No templates available. Please create a template first.
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.testTemplateId}
+                        onChange={(e) => setFormData({ ...formData, testTemplateId: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select a template...</option>
+                        {templates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name} ({template.category}) - {template.timeLimit} min
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -292,10 +402,10 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || templates.length === 0}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
                   >
-                    {loading ? 'Assigning...' : 'Assign Template'}
+                    {loading ? 'Assigning...' : templates.length === 0 ? 'No Templates Available' : 'Assign Template'}
                   </button>
                 </div>
               </form>
@@ -317,7 +427,10 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                 </div>
               ) : assignments.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No assignments found for this user. Assign a template to get started.</p>
+                  <div className="text-gray-500 space-y-2">
+                    <p>📋 No assignments found for this user.</p>
+                    <p className="text-sm">Assign a template to get started!</p>
+                  </div>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
@@ -326,9 +439,16 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            {getTemplateName(assignment.testTemplateId)}
+                            {getTemplateName(assignment)}
                           </h3>
                           <div className="space-y-1 text-sm text-gray-600">
+                            {assignment.testTemplate && (
+                              <p>
+                                <span className="font-medium">Category:</span> {assignment.testTemplate.category} | 
+                                <span className="font-medium"> Department:</span> {assignment.testTemplate.department} | 
+                                <span className="font-medium"> Time Limit:</span> {assignment.testTemplate.timeLimit} min
+                              </p>
+                            )}
                             <p>
                               <span className="font-medium">Assigned:</span> {' '}
                               {new Date(assignment.assignedAt).toLocaleDateString()}
@@ -339,6 +459,9 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                                 {new Date(assignment.dueDate).toLocaleDateString()}
                               </p>
                             )}
+                            <p>
+                              <span className="font-medium">Assigned By:</span> {assignment.assignedBy}
+                            </p>
                             <p>
                               <span className="font-medium">Status:</span> {' '}
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -373,7 +496,11 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Template
                 </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select 
+                  value={quickAssignData.testTemplateId}
+                  onChange={(e) => setQuickAssignData({ ...quickAssignData, testTemplateId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
                   <option value="">Select template...</option>
                   {templates.map((template) => (
                     <option key={template.id} value={template.id}>
@@ -387,18 +514,39 @@ export const Assignments: React.FC<AssignmentsProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Department
                 </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select 
+                  value={quickAssignData.department}
+                  onChange={(e) => setQuickAssignData({ ...quickAssignData, department: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
                   <option value="">All departments...</option>
-                  <option value="Engineering">Engineering</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Sales">Sales</option>
-                  <option value="HR">HR</option>
+                  {[...new Set(users.map(user => user.department).filter(Boolean))].map((dept) => (
+                    <option key={dept} value={dept!}>
+                      {dept}
+                    </option>
+                  ))}
                 </select>
               </div>
               
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Due Date (Optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={quickAssignData.dueDate}
+                  onChange={(e) => setQuickAssignData({ ...quickAssignData, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
               <div className="flex items-end">
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                  Bulk Assign
+                <button 
+                  onClick={handleQuickAssign}
+                  disabled={loading || !quickAssignData.testTemplateId}
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Assigning...' : 'Bulk Assign'}
                 </button>
               </div>
             </div>
