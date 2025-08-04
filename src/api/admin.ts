@@ -270,6 +270,8 @@ export const getAttemptForReview = async (attemptId: string) => {
 export const markTestAttempt = async (attemptId: string, markingData: {
   score: number;
   approved: boolean;
+  feedback?: string;
+  reviewedBy?: string;
 }) => {
   try {
     const response = await api.put(`/admin/attempts/${attemptId}/mark`, markingData);

@@ -34,6 +34,26 @@ export const Attempts: React.FC<AttemptsProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<string>('');
 
+  const fetchPendingAttempts = async () => {
+    try {
+      setPendingLoading(true);
+      const response = await getPendingReviewAttempts();
+      setPendingAttempts(response.data || []);
+    } catch (err: any) {
+      console.error('Failed to load pending attempts:', err);
+      // Don't set error state for pending attempts, just log it
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
+  // Expose refresh function for when returning from review
+  React.useEffect(() => {
+    if (activeTab === 'pending') {
+      fetchPendingAttempts();
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -44,19 +64,6 @@ export const Attempts: React.FC<AttemptsProps> = ({
         setError(err.message || 'Failed to load test templates');
       } finally {
         setLoading(false);
-      }
-    };
-
-    const fetchPendingAttempts = async () => {
-      try {
-        setPendingLoading(true);
-        const response = await getPendingReviewAttempts();
-        setPendingAttempts(response.data || []);
-      } catch (err: any) {
-        console.error('Failed to load pending attempts:', err);
-        // Don't set error state for pending attempts, just log it
-      } finally {
-        setPendingLoading(false);
       }
     };
 

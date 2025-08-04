@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AssignedTestsList } from '../../components/user/AssignedTestsList';
 import { SubmittedTestsList } from '../../components/user/SubmittedTestsList';
-import { getAvailableTests, getUserSubmittedTests } from '../../api/user';
+import { ResultsList } from '../../components/user/ResultsList';
+import { getAvailableTests, getUserSubmittedTests, getUserResults } from '../../api/user';
 
 interface DashboardProps {
   user: any;
@@ -16,8 +17,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [assignedTests, setAssignedTests] = useState<any[]>([]);
   const [submittedTests, setSubmittedTests] = useState<any[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'assigned' | 'submitted' | 'results'>('assigned');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,23 +34,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
         // Try to fetch data, but don't fail if endpoints don't exist
         try {
           console.log('🔄 Starting API calls...');
-          const [testsResponse, submittedTestsResponse] = await Promise.all([
+          const [testsResponse, submittedTestsResponse, resultsResponse] = await Promise.all([
             getAvailableTests(),
-            getUserSubmittedTests()
+            getUserSubmittedTests(),
+            getUserResults()
           ]);
           
           console.log('📝 Raw tests response:', testsResponse);
           console.log('📊 Raw submitted tests response:', submittedTestsResponse);
+          console.log('📊 Raw results response:', resultsResponse);
           
           // Handle the API response structure based on your backend
           const assignedTestsData = testsResponse.data || [];
           const submittedTestsData = submittedTestsResponse.data || submittedTestsResponse || [];
+          const resultsData = resultsResponse.data || [];
           
           console.log('📝 Parsed assigned tests:', assignedTestsData);
           console.log('📊 Parsed submitted tests:', submittedTestsData);
+          console.log('📊 Parsed results:', resultsData);
           
           setAssignedTests(Array.isArray(assignedTestsData) ? assignedTestsData : []);
           setSubmittedTests(Array.isArray(submittedTestsData) ? submittedTestsData : []);
+          setResults(Array.isArray(resultsData) ? resultsData : []);
         } catch (apiError: any) {
           console.warn('⚠️ API endpoints error:', apiError.message);
           // Don't completely fail - show empty dashboard with error info
@@ -102,7 +110,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
@@ -162,12 +170,85 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
           </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="text-2xl">📊</div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Results Available
+                    </dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {results.length}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('assigned')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'assigned'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Assigned Tests
+                {assignedTests.filter(t => t.status === 'assigned').length > 0 && (
+                  <span className="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">
+                    {assignedTests.filter(t => t.status === 'assigned').length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('submitted')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'submitted'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Submitted Tests
+                {submittedTests.length > 0 && (
+                  <span className="ml-2 bg-green-100 text-green-600 py-0.5 px-2 rounded-full text-xs">
+                    {submittedTests.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('results')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'results'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                My Results
+                {results.length > 0 && (
+                  <span className="ml-2 bg-purple-100 text-purple-600 py-0.5 px-2 rounded-full text-xs">
+                    {results.length}
+                  </span>
+                )}
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8">
           {/* Show info message if no data */}
-          {assignedTests.length === 0 && submittedTests.length === 0 && !loading && (
-            <div className="col-span-1 lg:col-span-2 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
+          {assignedTests.length === 0 && submittedTests.length === 0 && results.length === 0 && !loading && (
+            <div className="col-span-1 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -176,7 +257,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="ml-3">
                   <p className="text-sm">
-                    <strong>No Data Available:</strong> You don't have any assigned tests or submitted tests yet. 
+                    <strong>No Data Available:</strong> You don't have any assigned tests, submitted tests, or results yet. 
                     Tests will appear here once they are assigned to you by an administrator.
                     {user?.email && (
                       <>
@@ -190,33 +271,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
 
-          {/* Assigned Tests */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <AssignedTestsList
-              tests={assignedTests.filter(t => t.status !== 'completed')}
-              onStartTest={onStartTest}
-              isLoading={loading}
-            />
-          </div>
+          {/* Assigned Tests Tab */}
+          {activeTab === 'assigned' && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <AssignedTestsList
+                tests={assignedTests.filter(t => t.status !== 'completed')}
+                onStartTest={onStartTest}
+                isLoading={loading}
+              />
+            </div>
+          )}
 
-          {/* Recent Submitted Tests */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <SubmittedTestsList
-              submittedTests={submittedTests.slice(0, 5)} // Show only recent 5 submitted tests
-              onViewDetails={onViewResult}
-              isLoading={loading}
-            />
-            {submittedTests.length > 5 && (
-              <div className="mt-4 text-center">
-                <button
-                  onClick={() => onViewResult('all')}
-                  className="text-blue-600 hover:text-blue-500 text-sm font-medium"
-                >
-                  View all submitted tests →
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Submitted Tests Tab */}
+          {activeTab === 'submitted' && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <SubmittedTestsList
+                submittedTests={submittedTests}
+                onViewDetails={onViewResult}
+                isLoading={loading}
+              />
+            </div>
+          )}
+
+          {/* Results Tab */}
+          {activeTab === 'results' && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <ResultsList
+                results={results}
+                onViewDetails={onViewResult}
+                isLoading={loading}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import type { Attempt } from '../../types/admin';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { markTestAttempt } from '../../api/admin';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AttemptReviewProps {
   attempt: Attempt;
@@ -15,6 +16,7 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
   onMarkingComplete,
   isLoading: propIsLoading = false
 }) => {
+  const { user } = useAuth();
   const [feedback, setFeedback] = useState(attempt.feedback || '');
   const [isLoading, setIsLoading] = useState(propIsLoading);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
     const scores: { [key: string]: number } = {};
     const questions = attempt.test?.questions || attempt.test?.testTemplate?.questions || [];
     questions.forEach(question => {
-      scores[question.id] = question.marks || 0; // Default to full marks
+      scores[question.id] = 0; // Start with 0 points for manual grading
     });
     return scores;
   });
@@ -47,7 +49,15 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
 
       const totalScore = calculateTotalScore();
       
-      await markTestAttempt(attempt.id, { score: totalScore, approved });
+      // Use current admin user ID from auth context
+      const reviewedBy = user?.id || 'admin-uuid-789'; // Fallback if user ID not available
+      
+      await markTestAttempt(attempt.id, { 
+        score: totalScore, 
+        approved,
+        feedback: feedback.trim() || undefined,
+        reviewedBy 
+      });
       
       if (onMarkingComplete) {
         onMarkingComplete();
@@ -122,12 +132,14 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
                 </h3>
                 <p className="text-sm text-gray-600 mb-2">
                   Type: {question.type} | Max Points: {question.marks || 0}
-                  {question.answer && (
-                    <span className="ml-2 text-green-600">
-                      Correct Answer: {parseAnswer(question.answer)}
-                    </span>
-                  )}
                 </p>
+                {question.answer && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded">
+                    <p className="text-sm text-blue-800">
+                      <span className="font-medium">Reference Answer:</span> {parseAnswer(question.answer)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="bg-gray-50 p-3 rounded mb-4">
@@ -146,19 +158,8 @@ export const AttemptReview: React.FC<AttemptReviewProps> = ({
                   className="w-24"
                 />
                 <div className="flex-1">
-                  <div className={`text-sm font-medium ${
-                    question.answer && (() => {
-                      const correctAnswer = parseAnswer(question.answer);
-                      return userAnswer === correctAnswer ? 'text-green-600' : 'text-red-600';
-                    })() || 'text-gray-600'
-                  }`}>
-                    {question.answer 
-                      ? (() => {
-                          const correctAnswer = parseAnswer(question.answer);
-                          return userAnswer === correctAnswer ? '✓ Correct' : '✗ Incorrect';
-                        })()
-                      : 'Manual Review Required'
-                    }
+                  <div className="text-sm text-gray-600">
+                    Manual Review Required - Assign points based on answer quality
                   </div>
                 </div>
               </div>
