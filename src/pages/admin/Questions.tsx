@@ -197,6 +197,8 @@ export const Questions: React.FC<QuestionsProps> = ({
         : [];
       
       const questionData = {
+        testTemplateId: formData.testTemplateId,
+        type: formData.type,
         text: formData.text,
         options: filteredOptions,
         answer: formData.answer.filter(ans => ans.trim() !== ''),
@@ -280,7 +282,7 @@ export const Questions: React.FC<QuestionsProps> = ({
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Question Management</h1>
               <p className="mt-2 text-gray-600">
-                Create and manage questions for your test templates.
+                Create and manage questions for your test templates. Full editing control including question type and template changes.
               </p>
             </div>
             <button
@@ -322,6 +324,14 @@ export const Questions: React.FC<QuestionsProps> = ({
                 {editingQuestion ? 'Edit Question' : 'Create New Question'}
               </h2>
               
+              {editingQuestion && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+                  <p className="text-sm">
+                    <strong>Full Edit Control:</strong> You can change the template, question type, and all other fields when editing this question.
+                  </p>
+                </div>
+              )}
+              
               <form onSubmit={handleCreateQuestion}>
                 <div className="space-y-4">
                   <div>
@@ -332,8 +342,7 @@ export const Questions: React.FC<QuestionsProps> = ({
                       value={formData.testTemplateId}
                       onChange={(e) => setFormData({ ...formData, testTemplateId: e.target.value })}
                       required
-                      disabled={!!editingQuestion}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select a template...</option>
                       {templates.map((template) => (
@@ -350,13 +359,25 @@ export const Questions: React.FC<QuestionsProps> = ({
                     </label>
                     <select
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value as 'multiple-choice' | 'sentence' })}
-                      disabled={!!editingQuestion}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      onChange={(e) => {
+                        const newType = e.target.value as 'multiple-choice' | 'sentence';
+                        setFormData({
+                          ...formData,
+                          type: newType,
+                          options: newType === 'multiple-choice' ? ['', '', '', ''] : [],
+                          answer: ['']
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="multiple-choice">Multiple Choice</option>
                       <option value="sentence">Short Answer</option>
                     </select>
+                    {editingQuestion && (
+                      <p className="text-sm text-amber-600 mt-1">
+                        ⚠️ Changing question type will reset options and answers
+                      </p>
+                    )}
                   </div>
                   
                   <div>

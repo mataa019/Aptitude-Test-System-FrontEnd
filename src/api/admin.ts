@@ -94,6 +94,8 @@ export const createQuestion = async (data: {
 };
 
 export const updateQuestion = async (questionId: string, data: {
+  testTemplateId?: string;
+  type?: 'multiple-choice' | 'sentence';
   text?: string;
   options?: string[];
   answer?: string[];
