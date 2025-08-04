@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AdminNav } from '../../components/admin/AdminNav';
 import { AttemptReview } from '../../components/admin/AttemptReview';
 import { Loader } from '../../components/common/Loader';
-import { getAttemptById } from '../../api/admin';
+import { getAttemptForReview } from '../../api/admin';
 
 interface ReviewProps {
   attemptId: string;
@@ -22,24 +22,42 @@ export const Review: React.FC<ReviewProps> = ({
   const [currentAttempt, setCurrentAttempt] = useState<any>(null);
   const [isMarking] = useState(false);
 
-  useEffect(() => {
-    const fetchAttemptDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch the specific attempt by ID using the real API
-        const attemptData = await getAttemptById(attemptId);
-        setCurrentAttempt(attemptData);
-        
-      } catch (err: any) {
-        setError(err.message || 'Failed to load attempt details');
-        console.error('Error fetching attempt details:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAttemptDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch the specific attempt by ID for review using the specialized endpoint
+      const response = await getAttemptForReview(attemptId);
+      
+      // Transform the data to match AttemptReview component expectations
+      const transformedAttempt = {
+        id: response.data.id,
+        status: response.data.status,
+        submittedAt: response.data.startedAt, // Use startedAt since submittedAt might be null
+        timeSpent: response.data.assignment.testTemplate.timeLimit, // Approximate from time limit
+        answers: response.data.parsedAnswers, // Use the parsed answers directly
+        user: response.data.user,
+        test: {
+          testTemplate: response.data.assignment.testTemplate
+        },
+        assignment: response.data.assignment,
+        feedback: response.data.feedback || '',
+        score: response.data.score,
+        approved: response.data.approved
+      };
+      
+      setCurrentAttempt(transformedAttempt);
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to load attempt details');
+      console.error('Error fetching attempt details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (attemptId) {
       fetchAttemptDetails();
     }
@@ -72,14 +90,44 @@ export const Review: React.FC<ReviewProps> = ({
               <Loader size="lg" text="Loading attempt details..." />
             </div>
           ) : currentAttempt ? (
-            <AttemptReview
-              attempt={currentAttempt}
-              onMarkingComplete={() => {
-                // Handle marking completion
-                console.log('Marking completed');
-              }}
-              isLoading={isMarking}
-            />
+            <div className="space-y-6">
+              {/* Attempt Summary */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Attempt Review: {currentAttempt.test?.testTemplate?.name}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Student:</span>
+                    <p className="text-gray-900">{currentAttempt.user?.name}</p>
+                    <p className="text-gray-600">{currentAttempt.user?.email}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Test Details:</span>
+                    <p className="text-gray-900">{currentAttempt.test?.testTemplate?.category}</p>
+                    <p className="text-gray-600">{currentAttempt.test?.testTemplate?.timeLimit} minutes</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Status:</span>
+                    <p className="text-gray-900 capitalize">{currentAttempt.status}</p>
+                    <p className="text-gray-600">
+                      Started: {new Date(currentAttempt.submittedAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attempt Review Component */}
+              <AttemptReview
+                attempt={currentAttempt}
+                onMarkingComplete={() => {
+                  // Refresh the attempt data after marking
+                  console.log('Marking completed, refreshing data...');
+                  fetchAttemptDetails();
+                }}
+                isLoading={isMarking}
+              />
+            </div>
           ) : (
             <div className="bg-white shadow rounded-lg p-6">
               <div className="text-center py-8">

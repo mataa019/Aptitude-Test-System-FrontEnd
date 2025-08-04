@@ -258,6 +258,15 @@ export const getAttemptById = async (attemptId: string) => {
   }
 };
 
+export const getAttemptForReview = async (attemptId: string) => {
+  try {
+    const response = await api.get(`/admin/attempt/${attemptId}/review`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
 export const markTestAttempt = async (attemptId: string, markingData: {
   score: number;
   approved: boolean;
