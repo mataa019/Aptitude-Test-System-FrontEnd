@@ -15,6 +15,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then(m => ({
 const Attempts = lazy(() => import('./pages/admin/Attempts').then(m => ({ default: m.Attempts })));
 const Templates = lazy(() => import('./pages/admin/Templates').then(m => ({ default: m.Templates })));
 const Questions = lazy(() => import('./pages/admin/Questions').then(m => ({ default: m.Questions })));
+const Assignments = lazy(() => import('./pages/admin/Assignments').then(m => ({ default: m.Assignments })));
 const Users = lazy(() => import('./pages/admin/Users').then(m => ({ default: m.Users })));
 const Review = lazy(() => import('./pages/admin/Review').then(m => ({ default: m.Review })));
 
@@ -123,6 +124,17 @@ const QuestionsWrapper = () => {
   );
 };
 
+const AssignmentsWrapper = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Assignments 
+      currentPage="assignments"
+      onNavigate={(page) => navigate(`/admin/${page}`)}
+    />
+  );
+};
+
 const UsersWrapper = () => {
   const navigate = useNavigate();
   
@@ -163,6 +175,7 @@ export const adminRoutes: RouteObject[] = [
       { path: 'attempts', element: <AttemptsWrapper /> },
       { path: 'templates', element: <TemplatesWrapper /> },
       { path: 'questions', element: <QuestionsWrapper /> },
+      { path: 'assignments', element: <AssignmentsWrapper /> },
       { path: 'users', element: <UsersWrapper /> },
       { path: 'review/:attemptId', element: <ReviewWrapper /> },
     ]
@@ -178,6 +191,7 @@ export {
   Attempts, 
   Templates,
   Questions,
+  Assignments,
   Users,
   Review,
   TestWrapper,
@@ -188,5 +202,6 @@ export {
   AttemptsWrapper,
   TemplatesWrapper,
   QuestionsWrapper,
+  AssignmentsWrapper,
   UsersWrapper
 };

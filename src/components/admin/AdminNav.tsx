@@ -8,8 +8,10 @@ interface AdminNavProps {
 export const AdminNav: React.FC<AdminNavProps> = ({ currentPage, onNavigate }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'templates', label: 'Test Templates', icon: '📝' },
-    { id: 'attempts', label: 'All Attempts', icon: '📋' },
+    { id: 'templates', label: 'Templates', icon: '📝' },
+    { id: 'questions', label: 'Questions', icon: '❓' },
+    { id: 'assignments', label: 'Assignments', icon: '�' },
+    { id: 'attempts', label: 'Attempts', icon: '📋' },
     { id: 'users', label: 'Users', icon: '👥' },
     { id: 'reports', label: 'Reports', icon: '📈' },
   ];

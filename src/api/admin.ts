@@ -163,6 +163,26 @@ export const deleteUser = async (userId: string) => {
 };
 
 // 📝 Test Assignment
+export const assignTemplateToUser = async (data: { 
+  userId: string; 
+  testTemplateId: string; 
+  assignedBy: string;
+  dueDate?: string;
+}) => {
+  try {
+    const response = await api.post('/admin/assign-template', {
+      userId: data.userId,
+      testTemplateId: data.testTemplateId,
+      assignedBy: data.assignedBy,
+      ...(data.dueDate && { dueDate: data.dueDate })
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+// Legacy function - keeping for backward compatibility
 export const assignTestToUser = async (data: { 
   userId: string; 
   testTemplateId: string; 
@@ -242,6 +262,7 @@ export const getDashboardStats = async () => {
 
 // Legacy function names for backward compatibility
 export const assignTest = assignTestToUser;
+export const assignTemplate = assignTemplateToUser;
 export const markAttempt = (attemptId: string, score: number, approved: boolean) => 
   markTestAttempt(attemptId, { score, approved });
 export const getTestTemplateWithQuestions = getTestTemplateById;
