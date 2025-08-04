@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AssignedTestsList } from '../../components/user/AssignedTestsList';
 import { SubmittedTestsList } from '../../components/user/SubmittedTestsList';
-import { ResultsList } from '../../components/user/ResultsList';
 import { getAvailableTests, getUserSubmittedTests, getUserResults } from '../../api/user';
 
 interface DashboardProps {
@@ -293,16 +292,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
 
-          {/* Results Tab */}
-          {activeTab === 'results' && (
-            <div className="bg-white shadow rounded-lg p-6">
-              <ResultsList
-                results={results}
-                onViewDetails={onViewResult}
-                isLoading={loading}
-              />
-            </div>
-          )}
+          
         </div>
       </div>
     </div>
