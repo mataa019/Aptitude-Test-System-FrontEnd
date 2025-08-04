@@ -64,6 +64,28 @@ export const Questions: React.FC<QuestionsProps> = ({
     }
   }, [selectedTemplateId]);
 
+  useEffect(() => {
+    // Check if we need to edit a specific question (from dashboard)
+    const editQuestionId = sessionStorage.getItem('editQuestionId');
+    const templateId = sessionStorage.getItem('selectedTemplateId');
+    
+    if (editQuestionId && templateId) {
+      setSelectedTemplateId(templateId);
+      
+      // Clear the session storage
+      sessionStorage.removeItem('editQuestionId');
+      sessionStorage.removeItem('selectedTemplateId');
+      
+      // Wait for questions to load, then find and edit the question
+      setTimeout(() => {
+        const questionToEdit = questions.find(q => q.id === editQuestionId);
+        if (questionToEdit) {
+          startEdit(questionToEdit);
+        }
+      }, 1000);
+    }
+  }, [questions]);
+
   const fetchTemplates = async () => {
     try {
       setLoading(true);
@@ -310,7 +332,8 @@ export const Questions: React.FC<QuestionsProps> = ({
                       value={formData.testTemplateId}
                       onChange={(e) => setFormData({ ...formData, testTemplateId: e.target.value })}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={!!editingQuestion}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Select a template...</option>
                       {templates.map((template) => (
@@ -328,7 +351,8 @@ export const Questions: React.FC<QuestionsProps> = ({
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as 'multiple-choice' | 'sentence' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={!!editingQuestion}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       <option value="multiple-choice">Multiple Choice</option>
                       <option value="sentence">Short Answer</option>
@@ -505,6 +529,12 @@ export const Questions: React.FC<QuestionsProps> = ({
                         </div>
                         
                         <div className="flex space-x-2">
+                          <button
+                            onClick={() => startEdit(question)}
+                            className="text-blue-600 hover:text-blue-900 text-sm"
+                          >
+                            Edit
+                          </button>
                           <button
                             onClick={() => handleDeleteQuestion(question.id)}
                             className="text-red-600 hover:text-red-900 text-sm"

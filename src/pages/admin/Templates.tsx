@@ -5,7 +5,8 @@ import {
   createTestTemplate, 
   updateTestTemplate, 
   deleteTestTemplate,
-  getTestTemplateById
+  getTestTemplateById,
+  deleteQuestion
 } from '../../api/admin';
 
 interface TemplatesProps {
@@ -196,6 +197,42 @@ export const Templates: React.FC<TemplatesProps> = ({
       setViewingTemplate(response.data);
     } catch (err: any) {
       setError(err.message || 'Failed to load template details');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleEditQuestionFromTemplate = (question: any) => {
+    // Store question and template info for navigation to Questions page
+    sessionStorage.setItem('editQuestionId', question.id);
+    sessionStorage.setItem('selectedTemplateId', question.testTemplateId);
+    
+    // Close the template details modal
+    setViewingTemplate(null);
+    
+    // Navigate to questions page
+    onNavigate('questions');
+  };
+
+  const handleDeleteQuestionFromTemplate = async (questionId: string) => {
+    if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      setDetailsLoading(true);
+      await deleteQuestion(questionId);
+      
+      // Refresh the template details to show updated questions
+      if (viewingTemplate) {
+        const response = await getTestTemplateById(viewingTemplate.id);
+        setViewingTemplate(response.data);
+      }
+      
+      // Refresh the templates list to update question counts
+      await fetchTemplates();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete question');
     } finally {
       setDetailsLoading(false);
     }
@@ -493,35 +530,54 @@ export const Templates: React.FC<TemplatesProps> = ({
                     {viewingTemplate.questions.map((question, index) => (
                       <div key={question.id} className="border border-gray-200 rounded-lg p-3">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-sm font-medium text-gray-700">Question {index + 1}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              question.type === 'multiple-choice' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-green-100 text-green-800'
-                            }`}>
-                              {question.type}
-                            </span>
-                            <span className="text-xs text-gray-500">{question.marks} marks</span>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-sm font-medium text-gray-700">Question {index + 1}</span>
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  question.type === 'multiple-choice' 
+                                    ? 'bg-blue-100 text-blue-800' 
+                                    : 'bg-green-100 text-green-800'
+                                }`}>
+                                  {question.type}
+                                </span>
+                                <span className="text-xs text-gray-500">{question.marks} marks</span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-900 mb-2">{question.text}</p>
+                            {question.type === 'multiple-choice' && question.options && (
+                              <div className="mt-2">
+                                <div className="text-xs text-gray-600 mb-1">Options:</div>
+                                <div className="space-y-1">
+                                  {question.options.map((option, optIndex) => (
+                                    <div key={optIndex} className={`text-xs p-1 rounded ${
+                                      question.answer && question.answer.includes(option)
+                                        ? 'bg-green-100 text-green-800 font-medium'
+                                        : 'bg-gray-100 text-gray-700'
+                                    }`}>
+                                      {option} {question.answer && question.answer.includes(option) && '✓'}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-col space-y-1 ml-3">
+                            <button
+                              onClick={() => handleEditQuestionFromTemplate(question)}
+                              className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestionFromTemplate(question.id)}
+                              className="text-xs text-red-600 hover:text-red-800 px-2 py-1 rounded border border-red-200 hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-900 mb-2">{question.text}</p>
-                        {question.type === 'multiple-choice' && question.options && (
-                          <div className="mt-2">
-                            <div className="text-xs text-gray-600 mb-1">Options:</div>
-                            <div className="space-y-1">
-                              {question.options.map((option, optIndex) => (
-                                <div key={optIndex} className={`text-xs p-1 rounded ${
-                                  question.answer && question.answer.includes(option)
-                                    ? 'bg-green-100 text-green-800 font-medium'
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {option} {question.answer && question.answer.includes(option) && '✓'}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
