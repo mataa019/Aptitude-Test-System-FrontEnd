@@ -3,7 +3,7 @@ import { AdminNav } from '../../components/admin/AdminNav';
 import { 
   getAllTestTemplates, 
   createQuestion,
-  getQuestionsByTemplateId,
+  getTestTemplateById,
   updateQuestion,
   deleteQuestion
 } from '../../api/admin';
@@ -79,9 +79,13 @@ export const Questions: React.FC<QuestionsProps> = ({
   const fetchQuestions = async (templateId: string) => {
     try {
       setLoading(true);
-      const response = await getQuestionsByTemplateId(templateId);
-      setQuestions(response.data || []);
+      setError(null);
+      console.log('Fetching questions for template:', templateId);
+      const response = await getTestTemplateById(templateId);
+      console.log('Template response:', response);
+      setQuestions(response.data?.questions || []);
     } catch (err: any) {
+      console.error('Error fetching questions:', err);
       setError(err.message || 'Failed to load questions');
     } finally {
       setLoading(false);
@@ -90,6 +94,13 @@ export const Questions: React.FC<QuestionsProps> = ({
 
   const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (editingQuestion) {
+      // Update existing question
+      await handleUpdateQuestion(e);
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -151,6 +162,50 @@ export const Questions: React.FC<QuestionsProps> = ({
     }
   };
 
+  const handleUpdateQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingQuestion) return;
+    
+    try {
+      setLoading(true);
+      
+      // Filter out empty options for multiple choice
+      const filteredOptions = formData.type === 'multiple-choice' 
+        ? formData.options.filter(option => option.trim() !== '')
+        : [];
+      
+      const questionData = {
+        text: formData.text,
+        options: filteredOptions,
+        answer: formData.answer.filter(ans => ans.trim() !== ''),
+        marks: formData.marks
+      };
+
+      await updateQuestion(editingQuestion.id, questionData);
+      
+      // Reset form
+      setFormData({
+        testTemplateId: '',
+        type: 'multiple-choice',
+        text: '',
+        options: ['', '', '', ''],
+        answer: [''],
+        marks: 1
+      });
+      setEditingQuestion(null);
+      setShowCreateForm(false);
+      
+      // Refresh questions if template is selected
+      if (selectedTemplateId) {
+        await fetchQuestions(selectedTemplateId);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update question');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startCreate = () => {
     setFormData({
       testTemplateId: selectedTemplateId || '',
@@ -160,6 +215,20 @@ export const Questions: React.FC<QuestionsProps> = ({
       answer: [''],
       marks: 1
     });
+    setEditingQuestion(null);
+    setShowCreateForm(true);
+  };
+
+  const startEdit = (question: Question) => {
+    setFormData({
+      testTemplateId: question.testTemplateId,
+      type: question.type,
+      text: question.text,
+      options: question.options || ['', '', '', ''],
+      answer: question.answer || [''],
+      marks: question.marks
+    });
+    setEditingQuestion(question);
     setShowCreateForm(true);
   };
 
@@ -354,7 +423,18 @@ export const Questions: React.FC<QuestionsProps> = ({
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setShowCreateForm(false)}
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setEditingQuestion(null);
+                      setFormData({
+                        testTemplateId: '',
+                        type: 'multiple-choice',
+                        text: '',
+                        options: ['', '', '', ''],
+                        answer: [''],
+                        marks: 1
+                      });
+                    }}
                     className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
                     Cancel
@@ -364,7 +444,10 @@ export const Questions: React.FC<QuestionsProps> = ({
                     disabled={loading}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
                   >
-                    {loading ? 'Creating...' : 'Create Question'}
+                    {loading 
+                      ? (editingQuestion ? 'Updating...' : 'Creating...') 
+                      : (editingQuestion ? 'Update Question' : 'Create Question')
+                    }
                   </button>
                 </div>
               </form>

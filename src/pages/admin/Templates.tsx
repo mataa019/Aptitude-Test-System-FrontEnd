@@ -4,7 +4,8 @@ import {
   getAllTestTemplates, 
   createTestTemplate, 
   updateTestTemplate, 
-  deleteTestTemplate 
+  deleteTestTemplate,
+  getTestTemplateById
 } from '../../api/admin';
 
 interface TemplatesProps {
@@ -23,6 +24,60 @@ interface TestTemplate {
   questionCount?: number;
 }
 
+interface DetailedTestTemplate extends TestTemplate {
+  updatedAt: string;
+  questions: Array<{
+    id: string;
+    testTemplateId: string;
+    type: 'multiple-choice' | 'sentence';
+    text: string;
+    options: string[] | null;
+    answer: string[] | null;
+    marks: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  assignments: Array<{
+    id: string;
+    userId: string;
+    testTemplateId: string;
+    assignedBy: string;
+    assignedAt: string;
+    status: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      department: string | null;
+    };
+  }>;
+  attempts: Array<{
+    id: string;
+    assignmentId: string;
+    userId: string;
+    testTemplateId: string;
+    startedAt: string;
+    submittedAt: string | null;
+    answers: Array<{
+      questionId: string;
+      answer: string;
+    }> | null;
+    status: string;
+    score: number | null;
+    approved: boolean | null;
+    createdAt: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>;
+  _count: {
+    assignments: number;
+    attempts: number;
+  };
+}
+
 export const Templates: React.FC<TemplatesProps> = ({ 
   currentPage, 
   onNavigate 
@@ -32,6 +87,8 @@ export const Templates: React.FC<TemplatesProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TestTemplate | null>(null);
+  const [viewingTemplate, setViewingTemplate] = useState<DetailedTestTemplate | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -50,7 +107,27 @@ export const Templates: React.FC<TemplatesProps> = ({
       setLoading(true);
       setError(null);
       const response = await getAllTestTemplates();
-      setTemplates(response.data || []);
+      
+      // Fetch question counts for each template
+      const templatesWithQuestionCounts = await Promise.all(
+        (response.data || []).map(async (template: TestTemplate) => {
+          try {
+            const detailsResponse = await getTestTemplateById(template.id);
+            return {
+              ...template,
+              questionCount: detailsResponse.data?.questions?.length || 0
+            };
+          } catch (err) {
+            // If fetching details fails, return template with 0 questions
+            return {
+              ...template,
+              questionCount: 0
+            };
+          }
+        })
+      );
+      
+      setTemplates(templatesWithQuestionCounts);
     } catch (err: any) {
       setError(err.message || 'Failed to load test templates');
     } finally {
@@ -108,6 +185,19 @@ export const Templates: React.FC<TemplatesProps> = ({
       setError(err.message || 'Failed to delete template');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewTemplate = async (templateId: string) => {
+    try {
+      setDetailsLoading(true);
+      setError(null);
+      const response = await getTestTemplateById(templateId);
+      setViewingTemplate(response.data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load template details');
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -300,6 +390,12 @@ export const Templates: React.FC<TemplatesProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                           <button
+                            onClick={() => handleViewTemplate(template.id)}
+                            className="text-purple-600 hover:text-purple-900"
+                          >
+                            View Details
+                          </button>
+                          <button
                             onClick={() => startEdit(template)}
                             className="text-blue-600 hover:text-blue-900"
                           >
@@ -327,6 +423,185 @@ export const Templates: React.FC<TemplatesProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Template Details Modal */}
+      {viewingTemplate && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Template Details</h3>
+              <button
+                onClick={() => setViewingTemplate(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <span className="sr-only">Close</span>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {detailsLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Template Info */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">{viewingTemplate.name}</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Category:</span>
+                      <p className="text-gray-900">{viewingTemplate.category}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Department:</span>
+                      <p className="text-gray-900">{viewingTemplate.department}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Time Limit:</span>
+                      <p className="text-gray-900">{viewingTemplate.timeLimit} minutes</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Created:</span>
+                      <p className="text-gray-900">{new Date(viewingTemplate.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-blue-600">{viewingTemplate.questions.length}</div>
+                    <div className="text-sm text-blue-800">Total Questions</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-green-600">{viewingTemplate._count.assignments}</div>
+                    <div className="text-sm text-green-800">Assignments</div>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-purple-600">{viewingTemplate._count.attempts}</div>
+                    <div className="text-sm text-purple-800">Attempts</div>
+                  </div>
+                </div>
+
+                {/* Questions */}
+                <div>
+                  <h5 className="text-md font-semibold text-gray-900 mb-3">Questions ({viewingTemplate.questions.length})</h5>
+                  <div className="max-h-60 overflow-y-auto space-y-3">
+                    {viewingTemplate.questions.map((question, index) => (
+                      <div key={question.id} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-sm font-medium text-gray-700">Question {index + 1}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              question.type === 'multiple-choice' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {question.type}
+                            </span>
+                            <span className="text-xs text-gray-500">{question.marks} marks</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-900 mb-2">{question.text}</p>
+                        {question.type === 'multiple-choice' && question.options && (
+                          <div className="mt-2">
+                            <div className="text-xs text-gray-600 mb-1">Options:</div>
+                            <div className="space-y-1">
+                              {question.options.map((option, optIndex) => (
+                                <div key={optIndex} className={`text-xs p-1 rounded ${
+                                  question.answer && question.answer.includes(option)
+                                    ? 'bg-green-100 text-green-800 font-medium'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {option} {question.answer && question.answer.includes(option) && '✓'}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Assignments */}
+                {viewingTemplate.assignments.length > 0 && (
+                  <div>
+                    <h5 className="text-md font-semibold text-gray-900 mb-3">Assignments ({viewingTemplate.assignments.length})</h5>
+                    <div className="max-h-40 overflow-y-auto">
+                      <div className="space-y-2">
+                        {viewingTemplate.assignments.map((assignment) => (
+                          <div key={assignment.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{assignment.user.name}</div>
+                              <div className="text-xs text-gray-500">{assignment.user.email}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-xs px-2 py-1 rounded-full ${
+                                assignment.status === 'completed' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {assignment.status}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {new Date(assignment.assignedAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Attempts */}
+                {viewingTemplate.attempts.length > 0 && (
+                  <div>
+                    <h5 className="text-md font-semibold text-gray-900 mb-3">Recent Attempts ({viewingTemplate.attempts.length})</h5>
+                    <div className="max-h-40 overflow-y-auto">
+                      <div className="space-y-2">
+                        {viewingTemplate.attempts.slice(0, 5).map((attempt) => (
+                          <div key={attempt.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{attempt.user.name}</div>
+                              <div className="text-xs text-gray-500">{attempt.user.email}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-xs px-2 py-1 rounded-full ${
+                                attempt.status === 'submitted' 
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : attempt.status === 'completed'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {attempt.status}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {new Date(attempt.startedAt).toLocaleDateString()}
+                              </div>
+                              {attempt.score !== null && (
+                                <div className="text-xs text-gray-700 font-medium">
+                                  Score: {attempt.score}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

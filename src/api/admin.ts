@@ -93,25 +93,6 @@ export const createQuestion = async (data: {
   }
 };
 
-export const getQuestionsByTemplateId = async (templateId: string) => {
-  try {
-    const response = await api.get(`/admin/test-templates/${templateId}/questions`);
-    
-    // Parse JSON strings in questions if they exist
-    if (response.data?.data) {
-      response.data.data = response.data.data.map((question: any) => ({
-        ...question,
-        options: question.options ? JSON.parse(question.options) : null,
-        answer: question.answer ? JSON.parse(question.answer) : null
-      }));
-    }
-    
-    return response.data;
-  } catch (error) {
-    throw new Error(handleError(error));
-  }
-};
-
 export const updateQuestion = async (questionId: string, data: {
   text?: string;
   options?: string[];
