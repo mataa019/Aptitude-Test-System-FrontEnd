@@ -28,11 +28,30 @@ export const getAllTestTemplates = async () => {
 export const getTestTemplateById = async (templateId: string) => {
   try {
     const response = await api.get(`/admin/test-templates/${templateId}`);
+    
+    // Parse JSON strings in questions if they exist
+    if (response.data?.data?.questions) {
+      response.data.data.questions = response.data.data.questions.map((question: any) => ({
+        ...question,
+        options: question.options ? JSON.parse(question.options) : null,
+        answer: question.answer ? JSON.parse(question.answer) : null
+      }));
+    }
+    
+    // Parse JSON strings in attempts if they exist
+    if (response.data?.data?.attempts) {
+      response.data.data.attempts = response.data.data.attempts.map((attempt: any) => ({
+        ...attempt,
+        answers: attempt.answers ? JSON.parse(attempt.answers) : null
+      }));
+    }
+    
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
   }
 };
+
 
 export const updateTestTemplate = async (templateId: string, data: {
   name?: string;
@@ -62,8 +81,8 @@ export const createQuestion = async (data: {
   testTemplateId: string;
   type: 'multiple-choice' | 'sentence';
   text: string;
-  options?: string[];
-  answer: string;
+  options: string[];
+  answer: string[];
   marks: number;
 }) => {
   try {
@@ -74,10 +93,29 @@ export const createQuestion = async (data: {
   }
 };
 
+export const getQuestionsByTemplateId = async (templateId: string) => {
+  try {
+    const response = await api.get(`/admin/test-templates/${templateId}/questions`);
+    
+    // Parse JSON strings in questions if they exist
+    if (response.data?.data) {
+      response.data.data = response.data.data.map((question: any) => ({
+        ...question,
+        options: question.options ? JSON.parse(question.options) : null,
+        answer: question.answer ? JSON.parse(question.answer) : null
+      }));
+    }
+    
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
 export const updateQuestion = async (questionId: string, data: {
   text?: string;
   options?: string[];
-  answer?: string;
+  answer?: string[];
   marks?: number;
 }) => {
   try {
@@ -212,6 +250,7 @@ export const markTestAttempt = async (attemptId: string, markingData: {
 export const getDashboardStats = async () => {
   try {
     const response = await api.get('/admin/dashboard/stats');
+    // The API returns { message: "Dashboard stats fetched successfully", data: { totalTemplates, totalAttempts, pendingReviews } }
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));

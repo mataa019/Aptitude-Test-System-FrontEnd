@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminNav } from '../../components/admin/AdminNav';
-import { getDashboardStats } from '../../api/admin';
+import { getDashboardStats, getAllUsers } from '../../api/admin';
 
 interface AdminDashboardProps {
   user?: any;
@@ -22,39 +22,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setLoading(true);
         setError(null);
         
-        // Use the real dashboard stats API
-        const statsData = await getDashboardStats();
-        setDashboardStats(statsData);
+        // Fetch dashboard stats and users data in parallel
+        const [statsResponse, usersResponse] = await Promise.all([
+          getDashboardStats(),
+          getAllUsers()
+        ]);
+        
+        console.log('Dashboard API response:', statsResponse);
+        console.log('Users API response:', usersResponse);
+        
+        // Handle the API response structure: { message, data: { totalTemplates, totalAttempts, pendingReviews } }
+        const statsData = statsResponse.data || statsResponse;
+        
+        // Add total users count from users API
+        const totalUsers = usersResponse.data ? usersResponse.data.length : 0;
+        
+        setDashboardStats({
+          ...statsData,
+          totalUsers
+        });
       } catch (err: any) {
-        // If API fails, fall back to mock data for development
-        console.warn('Dashboard API failed, using mock data:', err.message);
-        
-        const mockStats = {
-          totalTemplates: 5,
-          totalAttempts: 25,
-          pendingReviews: 8,
-          activeUsers: 12,
-          recentActivity: [
-            {
-              id: 1,
-              description: "New test attempt submitted for JavaScript Basics",
-              timestamp: new Date().toISOString()
-            },
-            {
-              id: 2,
-              description: "Test template 'React Fundamentals' created",
-              timestamp: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              id: 3,
-              description: "Student attempt approved for Python Basics",
-              timestamp: new Date(Date.now() - 7200000).toISOString()
-            }
-          ]
-        };
-        
-        setDashboardStats(mockStats);
-        setError('Using sample data - dashboard API not available');
+        console.error('Dashboard API failed:', err.message);
+        setError(err.message || 'Failed to load dashboard statistics');
       } finally {
         setLoading(false);
       }
@@ -94,7 +83,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <>
               {/* Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="bg-white overflow-hidden shadow rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                     onClick={() => onNavigate('templates')}>
                   <div className="p-5">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -114,7 +104,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="bg-white overflow-hidden shadow rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                     onClick={() => onNavigate('attempts')}>
                   <div className="p-5">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -134,7 +125,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="bg-white overflow-hidden shadow rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                     onClick={() => onNavigate('attempts')}>
                   <div className="p-5">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -154,7 +146,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="bg-white overflow-hidden shadow rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                     onClick={() => onNavigate('users')}>
                   <div className="p-5">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -163,10 +156,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <div className="ml-5 w-0 flex-1">
                         <dl>
                           <dt className="text-sm font-medium text-gray-500 truncate">
-                            Active Users
+                            Total Users
                           </dt>
                           <dd className="text-lg font-medium text-gray-900">
-                            --
+                            {dashboardStats?.totalUsers || 0}
                           </dd>
                         </dl>
                       </div>
@@ -188,6 +181,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       Create New Test Template
                     </button>
                     <button
+                      onClick={() => onNavigate('questions')}
+                      className="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      <span className="mr-3">❓</span>
+                      Create New Question
+                    </button>
+                    <button
                       onClick={() => onNavigate('attempts')}
                       className="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                     >
@@ -195,11 +195,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       Review Pending Attempts
                     </button>
                     <button
-                      onClick={() => onNavigate('reports')}
+                      onClick={() => onNavigate('users')}
                       className="w-full flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                     >
-                      <span className="mr-3">📈</span>
-                      Generate Reports
+                      <span className="mr-3">�</span>
+                      Manage Users
                     </button>
                   </div>
                 </div>
