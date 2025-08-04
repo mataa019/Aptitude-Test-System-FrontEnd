@@ -1,5 +1,23 @@
 import { api, token, user, handleError } from './config';
 
+// Verify current token and get user data
+export const verifyToken = async () => {
+  try {
+    const response = await api.get('/user/profile');
+    const userData = response.data.data || response.data;
+    
+    // Update stored user data
+    user.set(userData);
+    
+    return { user: userData };
+  } catch (error: any) {
+    // Token is invalid, clear it
+    token.remove();
+    user.remove();
+    throw new Error(handleError(error));
+  }
+};
+
 // Login function
 export const login = async (email: string, password: string) => {
   try {

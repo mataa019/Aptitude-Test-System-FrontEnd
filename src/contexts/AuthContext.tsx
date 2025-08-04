@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types/user';
+import { verifyToken } from '../api/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -23,12 +24,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app load
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setIsAuthenticated(true);
-      // In a real app, you'd validate the token and fetch user data
-    }
-    setIsLoading(false);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          // Verify token and get current user data
+          const { user: userData } = await verifyToken();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (error) {
+          // Token is invalid, clear everything
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('authToken');
+          console.log('Token verification failed:', error);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = (token: string, userData: User) => {
@@ -41,6 +56,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userData');
+    // Force page reload to clear any cached state
+    window.location.href = '/';
   };
 
   return (
