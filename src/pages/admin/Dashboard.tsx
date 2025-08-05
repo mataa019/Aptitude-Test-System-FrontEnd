@@ -163,7 +163,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div className="bg-white overflow-hidden shadow rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                     onClick={() => onNavigate('attempts')}>
+                     onClick={() => onNavigate('attempts?tab=all')}>
                   <div className="p-5">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">

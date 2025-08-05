@@ -292,6 +292,85 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
 
+          {/* Results Tab */}
+          {activeTab === 'results' && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900">My Test Results</h3>
+                {results.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-lg mb-2">📊</div>
+                    <p className="text-gray-500">No results available yet.</p>
+                    <p className="text-sm text-gray-400 mt-1">Complete and submit tests to see your results here.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {results.map((result, index) => (
+                      <div 
+                        key={result.attemptId || index} 
+                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {result.testTemplate?.name || 'Test Result'}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              Submitted: {result.submittedAt ? new Date(result.submittedAt).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              result.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {result.approved ? 'Approved' : 'Under Review'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Score</p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              {result.gradingSummary?.totalScore || result.score || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Percentage</p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              {result.gradingSummary?.percentage || 0}%
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Questions</p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              {result.gradingSummary?.totalQuestions || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Correct</p>
+                            <p className="text-lg font-semibold text-green-600">
+                              {result.gradingSummary?.correctAnswers || 0}
+                            </p>
+                          </div>
+                        </div>
+
+                        {result.hasDetailedReview && (
+                          <button
+                            onClick={() => onViewResult(result.attemptId)}
+                            className="w-full mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            View Detailed Review
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           
         </div>
       </div>

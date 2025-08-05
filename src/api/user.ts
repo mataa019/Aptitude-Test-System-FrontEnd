@@ -155,3 +155,13 @@ export const getUserSubmittedTests = async () => {
     throw new Error(handleError(error));
   }
 };
+
+// Get detailed review for a specific result
+export const getDetailedReview = async (attemptId: string) => {
+  try {
+    const response = await api.get(`/user/results/${attemptId}/detailed-review`);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};

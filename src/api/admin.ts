@@ -240,6 +240,15 @@ export const getPendingReviewAttempts = async () => {
   }
 };
 
+export const getAllAttempts = async () => {
+  try {
+    const response = await api.get('/admin/test-attempts');
+    return { data: response.data };
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
 export const getTestAttemptsWithAnswers = async (testTemplateId: string) => {
   try {
     const response = await api.get(`/admin/attempts/${testTemplateId}`);
