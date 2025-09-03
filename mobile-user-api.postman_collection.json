@@ -1,0 +1,109 @@
+{
+  "info": {
+    "_postman_id": "user-mobile-api-collection-2025",
+    "name": "User Mobile API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get User Profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/profile", "host": ["{{baseUrl}}"], "path": ["user", "profile"] }
+      }
+    },
+    {
+      "name": "Get Available Tests",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/assigned-tests/:userId", "host": ["{{baseUrl}}"], "path": ["user", "assigned-tests", ":userId"] }
+      }
+    },
+    {
+      "name": "Get Test By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/test/:testId", "host": ["{{baseUrl}}"], "path": ["user", "test", ":testId"] }
+      }
+    },
+    {
+      "name": "Start Test",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/test/:testId/start", "host": ["{{baseUrl}}"], "path": ["user", "test", ":testId", "start"] }
+      }
+    },
+    {
+      "name": "Submit Answers",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"responses\": [\n    {\n      \"questionId\": \"string\",\n      \"answer\": \"string\"\n    }\n  ]\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/user/test/:testId/submit", "host": ["{{baseUrl}}"], "path": ["user", "test", ":testId", "submit"] }
+      }
+    },
+    {
+      "name": "Finish Test",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/test/:testId/complete", "host": ["{{baseUrl}}"], "path": ["user", "test", ":testId", "complete"] }
+      }
+    },
+    {
+      "name": "Get Submitted Test",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/test/:testId/submitted", "host": ["{{baseUrl}}"], "path": ["user", "test", ":testId", "submitted"] }
+      }
+    },
+    {
+      "name": "Get User Attempts",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/submitted-tests", "host": ["{{baseUrl}}"], "path": ["user", "submitted-tests"] }
+      }
+    },
+    {
+      "name": "Get Test Attempt",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/test/:testId/submitted", "host": ["{{baseUrl}}"], "path": ["user", "test", ":testId", "submitted"] }
+      }
+    },
+    {
+      "name": "Get User Results",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/results", "host": ["{{baseUrl}}"], "path": ["user", "results"] }
+      }
+    },
+    {
+      "name": "Get User Submitted Tests",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/submitted-tests", "host": ["{{baseUrl}}"], "path": ["user", "submitted-tests"] }
+      }
+    },
+    {
+      "name": "Get Detailed Review",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/user/results/:attemptId/detailed-review", "host": ["{{baseUrl}}"], "path": ["user", "results", ":attemptId", "detailed-review"] }
+      }
+    }
+  ]
+}
