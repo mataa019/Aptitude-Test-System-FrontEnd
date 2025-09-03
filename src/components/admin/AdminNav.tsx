@@ -51,8 +51,7 @@ export const AdminNav: React.FC<AdminNavProps> = ({ currentPage, onNavigate }) =
             <div className="flex-shrink-0">
               <button
                 onClick={() => handleNavClick('profile')}
-                className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+                className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <span className="sr-only">View profile</span>
                 <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
                   👤

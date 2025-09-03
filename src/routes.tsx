@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Navigate, type RouteObject, useParams, useNavigate } from 'react-router-dom';
+import { Navigate, type RouteObject, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { user } from './api/config';
 
 // Lazy load components for better performance
@@ -92,12 +92,18 @@ const AdminDashboardWrapper = () => {
 
 const AttemptsWrapper = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check URL search params to determine initial tab
+  const searchParams = new URLSearchParams(location.search);
+  const tab = searchParams.get('tab') as 'pending' | 'by-template' | 'all' || 'pending';
   
   return (
     <Attempts 
       currentPage="attempts"
       onNavigate={(page) => navigate(`/admin/${page}`)}
       onReviewAttempt={(attemptId) => navigate(`/admin/review/${attemptId}`)}
+      initialTab={tab}
     />
   );
 };

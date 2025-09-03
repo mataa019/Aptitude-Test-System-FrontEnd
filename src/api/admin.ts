@@ -240,9 +240,28 @@ export const getPendingReviewAttempts = async () => {
   }
 };
 
+export const getAllAttempts = async () => {
+  try {
+    const response = await api.get('/admin/test-attempts');
+    return { data: response.data };
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
 export const getTestAttemptsWithAnswers = async (testTemplateId: string) => {
   try {
     const response = await api.get(`/admin/attempts/${testTemplateId}`);
+    // Parse answers if present and is a string
+    if (Array.isArray(response.data?.data)) {
+      response.data.data = response.data.data.map((attempt: any) => ({
+        ...attempt,
+        answers: attempt.answers && typeof attempt.answers === 'string' ? JSON.parse(attempt.answers) : attempt.answers,
+        result: attempt.result && attempt.result.breakdown && typeof attempt.result.breakdown === 'string'
+          ? { ...attempt.result, breakdown: JSON.parse(attempt.result.breakdown) }
+          : attempt.result
+      }));
+    }
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));
@@ -251,7 +270,18 @@ export const getTestAttemptsWithAnswers = async (testTemplateId: string) => {
 
 export const getAttemptById = async (attemptId: string) => {
   try {
-    const response = await api.get(`/admin/attempts/single/${attemptId}`);
+    const response = await api.get(`/admin/test-attempts/${attemptId}`);
+    // Parse answers if present and is a string
+    if (response.data?.data) {
+      const attempt = response.data.data;
+      response.data.data = {
+        ...attempt,
+        answers: attempt.answers && typeof attempt.answers === 'string' ? JSON.parse(attempt.answers) : attempt.answers,
+        result: attempt.result && attempt.result.breakdown && typeof attempt.result.breakdown === 'string'
+          ? { ...attempt.result, breakdown: JSON.parse(attempt.result.breakdown) }
+          : attempt.result
+      };
+    }
     return response.data;
   } catch (error) {
     throw new Error(handleError(error));

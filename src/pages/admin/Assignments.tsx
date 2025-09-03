@@ -347,15 +347,7 @@ export const Assignments: React.FC<AssignmentsProps> = ({
             </div>
           </div>
 
-          {/* Debug Info */}
-          <div className="bg-gray-100 p-4 rounded mb-6">
-            <h3 className="font-semibold mb-2">Debug Info:</h3>
-            <p>Users loaded: {users.length}</p>
-            <p>Templates loaded: {templates.length}</p>
-            <p>Selected user: {selectedUser}</p>
-            <p>User assignments: {assignments.length}</p>
-            <p>Show assign form: {showAssignForm ? 'Yes' : 'No'}</p>
-          </div>
+          
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-6">
